@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
@@ -29,27 +30,24 @@ import com.example.localgigs.AuthViewModel
 @Composable
 fun SignupPage(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel) {
 
-    var email by remember {
-        mutableStateOf("")
-    }
-
-    var password by remember {
-        mutableStateOf("")
-    }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var firstname by remember { mutableStateOf("") }
+    var lastname by remember { mutableStateOf("") }
 
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
 
     LaunchedEffect(authState.value) {
-        when(authState.value){
+        when (authState.value) {
             is AuthState.Authenticated -> navController.navigate("home")
-            is AuthState.Error -> Toast.makeText(context,
-                (authState.value as AuthState.Error).message,Toast.LENGTH_SHORT).show()
+            is AuthState.Error -> Toast.makeText(
+                context,
+                (authState.value as AuthState.Error).message, Toast.LENGTH_SHORT
+            ).show()
             else -> Unit
         }
-
     }
-
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -61,45 +59,48 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
+            value = firstname,
+            onValueChange = { firstname = it },
+            label = { Text(text = "First Name") }
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = lastname,
+            onValueChange = { lastname = it },
+            label = { Text(text = "Last Name") }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
             value = email,
-            onValueChange ={
-                email = it
-            },
-            label = {
-                Text(text = "Email")
-            }
+            onValueChange = { email = it },
+            label = { Text(text = "Email") }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = password,
-            onValueChange ={
-                password = it
-            },
-            label = {
-                Text(text = "Password")
-            }
+            onValueChange = { password = it },
+            label = { Text(text = "Password") }
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = {
-            authViewModel.signup(email,password)
-        },
+        Button(
+            onClick = { authViewModel.signup(email, password, firstname, lastname) },
             enabled = authState.value != AuthState.Loading
-            ) {
+        ) {
             Text(text = "Create account")
-
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextButton(onClick = {
-            navController.navigate("login")
-        }) {
+        TextButton(onClick = { navController.navigate("login") }) {
             Text(text = "Already have an account, login")
-
         }
     }
 }
