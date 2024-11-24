@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -21,22 +19,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.localgigs.pages.HomePage
 import com.example.localgigs.pages.MessagesPage
-import com.example.localgigs.pages.NotificationPage
 import com.example.localgigs.pages.ProfilePage
 import com.example.localgigs.pages.SearchPage
+import com.example.localgigs.repository.MessageRepository
 
 @Composable
 fun MainScreen(
     authViewModel: AuthViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    isProfessional: Boolean,
+    userId: String
 ) {
-    val navController = rememberNavController()
-
-    // Determine if the user is a professional
-    val isProfessional = authViewModel.authState.value == AuthState.Authenticated && checkUserRole(authViewModel)
+    // Check if user is authenticated before showing MainScreen content
+    val isAuthenticated = authViewModel.authState.value == AuthState.Authenticated
+    if (!isAuthenticated) {
+        // Navigate to login if not authenticated
+        navController.navigate("login") {
+            popUpTo("login") { inclusive = true } // Clear navigation stack
+        }
+        return
+    }
 
     val navItemList = listOf(
         NavItem("Home", Icons.Default.Home),
@@ -53,9 +58,9 @@ fun MainScreen(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
             NavigationBar {
-                navItemList.forEachIndexed{ index, navItem ->
+                navItemList.forEachIndexed { index, navItem ->
                     NavigationBarItem(
-                        selected = selectedIndex == index ,
+                        selected = selectedIndex == index,
                         onClick = {
                             selectedIndex = index
                         },
@@ -69,11 +74,6 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
-        MyAppNavigation(
-            modifier = Modifier.padding(innerPadding),
-            authViewModel = authViewModel
-        )
-        // Pass isProfessional to ContentScreen
         ContentScreen(
             modifier = Modifier.padding(innerPadding),
             selectedIndex = selectedIndex,
@@ -92,7 +92,7 @@ fun ContentScreen(
     authViewModel: AuthViewModel,
     isProfessional: Boolean
 ) {
-    when(selectedIndex){
+    when (selectedIndex) {
         0 -> HomePage(
             modifier = modifier,
             navController = navController,
@@ -100,7 +100,11 @@ fun ContentScreen(
             isProfessional = isProfessional
         )
         1 -> SearchPage()
-        2 -> MessagesPage()
-        3 -> ProfilePage()
+        2 -> MessagesPage(
+            navController = navController,
+            userId = String.toString(),
+            messageRepository = MessageRepository()
+            )
+        3 -> ProfilePage(modifier, authViewModel, navController)
     }
 }

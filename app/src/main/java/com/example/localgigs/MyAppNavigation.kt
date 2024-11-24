@@ -5,19 +5,30 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.localgigs.model.ChatViewModel
+import com.example.localgigs.pages.ChatScreen
 import com.example.localgigs.pages.HomePage
 import com.example.localgigs.pages.LoginPage
 import com.example.localgigs.pages.SignupPage
+import com.example.localgigs.pages.UsersListPage
+import com.example.localgigs.repository.MessageRepository
 
 @Composable
 fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel) {
     val navController = rememberNavController()
 
-    // Here you could check the user’s role, for example:
-    // Let's assume a temporary boolean that determines if the user is a professional
-    val isProfessional = authViewModel.authState.value == AuthState.Authenticated && checkUserRole(authViewModel)
+    // Retrieve current user's ID
+    val currentUserId = authViewModel.currentUserId
 
-    NavHost(navController = navController, startDestination = "login") {
+    // Determine if user is authenticated and has a professional role
+    val isAuthenticated = authViewModel.authState.value == AuthState.Authenticated
+    val isProfessional = isAuthenticated && checkUserRole(authViewModel)
+
+    // Get the singleton instance of MessageRepository
+    val messageRepository = MessageRepository.getInstance()
+
+    // Conditional navigation based on authentication state
+    NavHost(navController = navController, startDestination = if (isAuthenticated) "home" else "login") {
         composable("login") {
             LoginPage(modifier, navController, authViewModel)
         }
@@ -25,13 +36,40 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
             SignupPage(modifier, navController, authViewModel)
         }
         composable("home") {
-            HomePage(modifier = modifier, navController = navController, authViewModel = authViewModel, isProfessional = isProfessional)
+            MainScreen(
+                authViewModel = authViewModel,
+                modifier = modifier,
+                navController = navController,
+                isProfessional = isProfessional,
+                userId = currentUserId ?: ""
+            )
+        }
+        composable("users") {
+            // Fetch the list of users (replace with actual data fetching logic)
+            val users = listOf("User1", "User2", "User3") // Replace with actual user fetching logic
+
+            UsersListPage(
+                navController = navController,
+                users = users,
+                currentUserId = currentUserId ?: "",
+                messageRepository = messageRepository
+            )
+        }
+
+        // Route for ChatScreen
+        composable("chatScreen/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            val conversationId = "conversation_with_$userId" // Assuming conversationId is based on userId
+            ChatScreen(
+                userId = userId,
+                conversationId = conversationId,
+                chatViewModel = ChatViewModel(messageRepository = messageRepository)
+            )
         }
     }
 }
 
-// Mock function to determine user role (replace this with actual implementation)
+// Mock function to determine user role (replace with actual implementation)
 fun checkUserRole(authViewModel: AuthViewModel): Boolean {
-    // Logic to check if the user is a professional or client (e.g., based on user profile data)
-    return true // or false based on actual role
+    return true // Replace this logic with actual role checking
 }
