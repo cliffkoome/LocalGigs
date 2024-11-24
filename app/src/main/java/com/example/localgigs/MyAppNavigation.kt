@@ -18,6 +18,7 @@ import com.example.localgigs.pages.PostJobPage
 import com.example.localgigs.pages.SignupPage
 import com.example.localgigs.pages.UsersListPage
 import com.example.localgigs.repository.MessageRepository
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel) {
@@ -85,8 +86,10 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
         }
 
         composable("PostJob") {
+            val userEmail = FirebaseAuth.getInstance().currentUser?.email ?: ""
             PostJobPage(
-                navController = navController
+                navController = navController,
+                userEmail = userEmail
             )
         }
 

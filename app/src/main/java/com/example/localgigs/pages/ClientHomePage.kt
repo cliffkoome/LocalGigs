@@ -5,7 +5,6 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -29,7 +28,6 @@ fun ClientHomePage(
     navController: NavController,
     authViewModel: AuthViewModel
 ) {
-
     val db = FirebaseFirestore.getInstance()
     val authState = authViewModel.authState.observeAsState()
     val user = FirebaseAuth.getInstance().currentUser
@@ -52,10 +50,13 @@ fun ClientHomePage(
         }
     }
 
-    // Fetch jobs from Firestore
-    LaunchedEffect(true) {
-        fetchJobs(db) { fetchedJobs ->
-            jobs = fetchedJobs
+    // Fetch jobs from Firestore filtered by postedBy field
+    LaunchedEffect(user?.email) {
+        val userEmail = user?.email
+        if (userEmail != null) {
+            fetchJobs(db, userEmail) { fetchedJobs ->
+                jobs = fetchedJobs
+            }
         }
     }
 
@@ -96,7 +97,6 @@ fun ClientHomePage(
             ) {
                 Text(text = "Post a Job", color = Color.White)
             }
-
         }
 
         // Welcome Header
@@ -131,8 +131,8 @@ fun ClientHomePage(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
     }
+
     LaunchedEffect(authState.value) {
         if (authState.value is AuthState.Unauthenticated) {
             navController.navigate("login")
@@ -160,8 +160,9 @@ fun JobCard(job: Job) {
     }
 }
 
-fun fetchJobs(db: FirebaseFirestore, onResult: (List<Job>) -> Unit) {
+fun fetchJobs(db: FirebaseFirestore, userEmail: String, onResult: (List<Job>) -> Unit) {
     db.collection("jobs")
+        .whereEqualTo("postedBy", userEmail) // Filter jobs by 'postedBy' field
         .get()
         .addOnSuccessListener { result: QuerySnapshot ->
             val fetchedJobs = result.documents.mapNotNull { document ->

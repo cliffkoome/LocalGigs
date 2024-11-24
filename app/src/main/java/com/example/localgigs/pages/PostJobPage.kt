@@ -18,7 +18,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostJobPage(navController: NavController) {
+fun PostJobPage(navController: NavController, userEmail: String) {
     // State variables for form fields
     var jobTitle by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -34,15 +34,20 @@ fun PostJobPage(navController: NavController) {
     // Handle form submission
     fun postJob() {
         if (jobTitle.isNotEmpty() && description.isNotEmpty() && category.isNotEmpty() && pay.isNotEmpty() && location.isNotEmpty() && jobType.isNotEmpty() && skills.isNotEmpty()) {
-            // Create a job object
+            // Create jobId using email and job title (email.jobtitle format)
+            val jobId = "$userEmail.$jobTitle"
+
+            // Create a job object with jobId and postedBy field
             val jobData = hashMapOf(
+                "jobId" to jobId,  // Add the jobId field
                 "title" to jobTitle,
                 "description" to description,
                 "category" to category,
                 "pay" to pay.toDouble(),
                 "location" to location,
                 "jobType" to jobType,
-                "skills" to skills
+                "skills" to skills,
+                "postedBy" to userEmail  // Add the postedBy field
             )
 
             // Add the job data to Firestore
