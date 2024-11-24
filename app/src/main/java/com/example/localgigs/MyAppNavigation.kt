@@ -1,14 +1,18 @@
 package com.example.localgigs
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.localgigs.model.ChatViewModel
 import com.example.localgigs.pages.ChatScreen
+import com.example.localgigs.pages.ClientHomePage
 import com.example.localgigs.pages.HomePage
 import com.example.localgigs.pages.LoginPage
+import com.example.localgigs.pages.PostJobPage
 import com.example.localgigs.pages.SignupPage
 import com.example.localgigs.pages.UsersListPage
 import com.example.localgigs.repository.MessageRepository
@@ -22,25 +26,36 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
 
     // Determine if user is authenticated and has a professional role
     val isAuthenticated = authViewModel.authState.value == AuthState.Authenticated
-    val isProfessional = isAuthenticated && checkUserRole(authViewModel)
+    val userTypeState by authViewModel.userType.observeAsState(initial = null)
+
+    val startDestination = if (isAuthenticated) {
+        if (userTypeState == "Client") "client home" else "home"
+    } else {
+        "login"
+    }
 
     // Get the singleton instance of MessageRepository
     val messageRepository = MessageRepository.getInstance()
 
     // Conditional navigation based on authentication state
-    NavHost(navController = navController, startDestination = if (isAuthenticated) "home" else "login") {
+    NavHost(navController = navController, startDestination = startDestination) {
         composable("login") {
             LoginPage(modifier, navController, authViewModel)
         }
         composable("signup") {
             SignupPage(modifier, navController, authViewModel)
         }
+        composable("client home") {
+            ClientHomePage(
+                navController = navController,
+                authViewModel = authViewModel)
+        }
         composable("home") {
             MainScreen(
                 authViewModel = authViewModel,
                 modifier = modifier,
                 navController = navController,
-                isProfessional = isProfessional,
+                userTypeState  == "Professional",
                 userId = currentUserId ?: ""
             )
         }
@@ -66,10 +81,11 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
                 chatViewModel = ChatViewModel(messageRepository = messageRepository)
             )
         }
-    }
-}
 
-// Mock function to determine user role (replace with actual implementation)
-fun checkUserRole(authViewModel: AuthViewModel): Boolean {
-    return true // Replace this logic with actual role checking
+        composable("PostJob") {
+            PostJobPage(
+                navController = navController
+            )
+        }
+    }
 }

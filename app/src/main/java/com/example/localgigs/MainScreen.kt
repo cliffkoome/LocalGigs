@@ -1,5 +1,6 @@
 package com.example.localgigs
 
+import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -19,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
+import com.example.localgigs.pages.ClientHomePage
 import com.example.localgigs.pages.HomePage
 import com.example.localgigs.pages.MessagesPage
 import com.example.localgigs.pages.ProfilePage
@@ -36,12 +38,16 @@ fun MainScreen(
     // Check if user is authenticated before showing MainScreen content
     val isAuthenticated = authViewModel.authState.value == AuthState.Authenticated
     if (!isAuthenticated) {
-        // Navigate to login if not authenticated
+        // Log for debugging
+        Log.d("MainScreen", "User not authenticated, navigating to login.")
         navController.navigate("login") {
             popUpTo("login") { inclusive = true } // Clear navigation stack
         }
         return
     }
+
+    // Log for debugging
+    Log.d("MainScreen", "User authenticated, isProfessional: $isProfessional")
 
     val navItemList = listOf(
         NavItem("Home", Icons.Default.Home),
@@ -74,12 +80,15 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
+        // Log for debugging
+        Log.d("MainScreen", "Selected index: $selectedIndex")
         ContentScreen(
             modifier = Modifier.padding(innerPadding),
             selectedIndex = selectedIndex,
             navController = navController,
             authViewModel = authViewModel,
-            isProfessional = isProfessional
+            isProfessional = isProfessional,
+            userId = userId
         )
     }
 }
@@ -90,21 +99,38 @@ fun ContentScreen(
     selectedIndex: Int,
     navController: NavController,
     authViewModel: AuthViewModel,
-    isProfessional: Boolean
+    isProfessional: Boolean,
+    userId: String
 ) {
-    when (selectedIndex) {
-        0 -> HomePage(
-            modifier = modifier,
-            navController = navController,
-            authViewModel = authViewModel,
-            isProfessional = isProfessional
-        )
-        1 -> SearchPage()
-        2 -> MessagesPage(
-            navController = navController,
-            userId = String.toString(),
-            messageRepository = MessageRepository()
+    if (isProfessional) {
+        when (selectedIndex) {
+            0 -> HomePage(
+                modifier = modifier,
+                navController = navController,
+                authViewModel = authViewModel,
+                isProfessional = isProfessional
             )
-        3 -> ProfilePage(modifier, authViewModel, navController)
+            1 -> SearchPage(navController = navController)
+            2 -> MessagesPage(
+                navController = navController,
+                userId = userId,
+                messageRepository = MessageRepository()
+            )
+            3 -> ProfilePage(modifier, authViewModel, navController)
+        }
+    } else {
+        when (selectedIndex) {
+            0 -> ClientHomePage(
+                navController = navController,
+                authViewModel = authViewModel
+            )
+            1 -> SearchPage(navController = navController)
+            2 -> MessagesPage(
+                navController = navController,
+                userId = userId,
+                messageRepository = MessageRepository()
+            )
+            3 -> ProfilePage(modifier, authViewModel, navController)
+        }
     }
 }

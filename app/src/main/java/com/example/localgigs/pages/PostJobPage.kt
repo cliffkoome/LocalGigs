@@ -1,45 +1,144 @@
 package com.example.localgigs.pages
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
+import android.widget.Toast
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostJobPage() {
-    val db = FirebaseFirestore.getInstance()
-    var title by remember { mutableStateOf("") }
+fun PostJobPage(navController: NavController) {
+    // State variables for form fields
+    var jobTitle by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var skillsRequired by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("") }
     var budget by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var jobType by remember { mutableStateOf("") }
+    var skills by remember { mutableStateOf("") }
 
-    Column {
-        TextField(value = title, onValueChange = { title = it }, label = { Text("Job Title") })
-        TextField(value = description, onValueChange = { description = it }, label = { Text("Job Description") })
-        TextField(value = skillsRequired, onValueChange = { skillsRequired = it }, label = { Text("Skills Required") })
-        TextField(value = budget, onValueChange = { budget = it }, label = { Text("Budget") })
+    // Firestore instance
+    val db = FirebaseFirestore.getInstance()
 
-        Button(onClick = {
-            val job = hashMapOf(
-                "title" to title,
+    // Handle form submission
+    fun postJob() {
+        if (jobTitle.isNotEmpty() && description.isNotEmpty() && category.isNotEmpty() && budget.isNotEmpty() && location.isNotEmpty() && jobType.isNotEmpty() && skills.isNotEmpty()) {
+            // Create a job object
+            val jobData = hashMapOf(
+                "title" to jobTitle,
                 "description" to description,
-                "skillsRequired" to skillsRequired.split(","),
+                "category" to category,
                 "budget" to budget.toDouble(),
-                "clientId" to FirebaseAuth.getInstance().currentUser?.uid,
-                "status" to "open",
-                "createdAt" to FieldValue.serverTimestamp()
+                "location" to location,
+                "jobType" to jobType,
+                "skills" to skills
             )
-            db.collection("jobs").add(job)
-        }) {
-            Text("Post Job")
+
+            // Add the job data to Firestore
+            db.collection("jobs")
+                .add(jobData)
+                .addOnSuccessListener {
+                    Toast.makeText(navController.context, "Job posted successfully!", Toast.LENGTH_SHORT).show()
+                    // Navigate back to the home page or jobs list
+                    navController.popBackStack()
+                }
+                .addOnFailureListener { exception ->
+                    Toast.makeText(navController.context, "Error posting job: ${exception.message}", Toast.LENGTH_SHORT).show()
+                }
+        } else {
+            Toast.makeText(navController.context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Post a Job",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        // Job Title Input
+        TextField(
+            value = jobTitle,
+            onValueChange = { jobTitle = it },
+            label = { Text("Job Title") },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+        )
+
+        // Description Input
+        TextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("Description") },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            maxLines = 5
+        )
+
+        // Category Input
+        TextField(
+            value = category,
+            onValueChange = { category = it },
+            label = { Text("Category") },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+        )
+
+        // Budget Input
+        TextField(
+            value = budget,
+            onValueChange = { budget = it },
+            label = { Text("Budget (KES)") },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+        )
+
+        // Location Input
+        TextField(
+            value = location,
+            onValueChange = { location = it },
+            label = { Text("Location") },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+        )
+
+        // Job Type TextBox
+        TextField(
+            value = jobType,
+            onValueChange = { jobType = it },
+            label = { Text("Job Type (Full-time, Part-time, Freelance)") },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+        )
+
+        // Skills Required Input
+        TextField(
+            value = skills,
+            onValueChange = { skills = it },
+            label = { Text("Skills Required (comma separated)") },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+        )
+
+        // Submit Button
+        Button(
+            onClick = { postJob() },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
+        ) {
+            Text(text = "Post Job", color = Color.White)
         }
     }
 }
