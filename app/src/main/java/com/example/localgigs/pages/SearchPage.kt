@@ -1,5 +1,6 @@
 package com.example.localgigs.pages
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -55,7 +56,10 @@ fun SearchPage(modifier: Modifier = Modifier, navController: NavController) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(4.dp),
+                        .padding(4.dp)
+                        .clickable {
+                            navController.navigate("jobView/${job["title"]}/${job["location"]}/${job["pay"]}/${job["description"]}")
+                        },
                     shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9))
                 ) {
@@ -84,3 +88,4 @@ fun SearchPage(modifier: Modifier = Modifier, navController: NavController) {
         }
     }
 }
+

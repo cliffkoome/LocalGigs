@@ -23,7 +23,7 @@ fun PostJobPage(navController: NavController) {
     var jobTitle by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
-    var budget by remember { mutableStateOf("") }
+    var pay by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var jobType by remember { mutableStateOf("") }
     var skills by remember { mutableStateOf("") }
@@ -33,13 +33,13 @@ fun PostJobPage(navController: NavController) {
 
     // Handle form submission
     fun postJob() {
-        if (jobTitle.isNotEmpty() && description.isNotEmpty() && category.isNotEmpty() && budget.isNotEmpty() && location.isNotEmpty() && jobType.isNotEmpty() && skills.isNotEmpty()) {
+        if (jobTitle.isNotEmpty() && description.isNotEmpty() && category.isNotEmpty() && pay.isNotEmpty() && location.isNotEmpty() && jobType.isNotEmpty() && skills.isNotEmpty()) {
             // Create a job object
             val jobData = hashMapOf(
                 "title" to jobTitle,
                 "description" to description,
                 "category" to category,
-                "budget" to budget.toDouble(),
+                "pay" to pay.toDouble(),
                 "location" to location,
                 "jobType" to jobType,
                 "skills" to skills
@@ -99,11 +99,11 @@ fun PostJobPage(navController: NavController) {
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         )
 
-        // Budget Input
+        // Pay Input
         TextField(
-            value = budget,
-            onValueChange = { budget = it },
-            label = { Text("Budget (KES)") },
+            value = pay,
+            onValueChange = { pay = it },
+            label = { Text("Pay (KES)") },
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
         )

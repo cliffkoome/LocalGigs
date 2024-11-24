@@ -83,9 +83,6 @@ fun ClientHomePage(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-//            TextButton(onClick = { navController.navigate("search") }) {
-//                Text("Search Professionals")
-//            }
             TextButton(onClick = { authViewModel.signout() }) {
                 Text("Sign Out", color = Color.Red)
             }
