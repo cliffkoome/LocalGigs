@@ -10,7 +10,7 @@ import com.google.firebase.auth.FirebaseUser
 
 class AuthViewModel : ViewModel() {
 
-    private val auth : FirebaseAuth = FirebaseAuth.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
 
     private val _authState = MutableLiveData<AuthState>()
@@ -18,38 +18,58 @@ class AuthViewModel : ViewModel() {
     val currentUserId: String?
         get() = FirebaseAuth.getInstance().currentUser?.uid
 
+    private val _userType = MutableLiveData<String?>()
+    val userType: MutableLiveData<String?> = _userType
+
     init {
         checkAuthStatus()
     }
 
-
-    fun checkAuthStatus(){
-        if(auth.currentUser == null){
+    fun checkAuthStatus() {
+        if (auth.currentUser == null) {
             _authState.value = AuthState.Unauthenticated
-        }else{
+        } else {
             _authState.value = AuthState.Authenticated
+            fetchUserType()
         }
     }
 
-    fun login(email: String, password : String){
+    private fun fetchUserType() {
+        val userId = currentUserId
+        if (userId != null) {
+            firestore.collection("users").document(userId).get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val type = document.getString("userType")
+                        _userType.value = type ?: "client" // Default to client if not found
+                    } else {
+                        _userType.value = "client" // Default to client if no user type is found
+                    }
+                }
+                .addOnFailureListener {
+                    _userType.value = "client" // Default to client in case of an error
+                }
+        }
+    }
 
-        if (email.isEmpty() || password.isEmpty()){
-            _authState.value = AuthState.Error("Email or password Can't be empty")
+    fun login(email: String, password: String) {
+        if (email.isEmpty() || password.isEmpty()) {
+            _authState.value = AuthState.Error("Email or password can't be empty")
             return
         }
         _authState.value = AuthState.Loading
-        auth.signInWithEmailAndPassword(email,password)
-            .addOnCompleteListener{task->
-                if (task.isSuccessful){
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
                     _authState.value = AuthState.Authenticated
-                }else{
-                    _authState.value = AuthState.Error(task.exception?.message?:"Something went wrong")
+                    fetchUserType() // Fetch the user type after successful login
+                } else {
+                    _authState.value = AuthState.Error(task.exception?.message ?: "Something went wrong")
                 }
-
             }
     }
 
-    fun signup(email: String, password: String, firstname: String, lastname: String) {
+    fun signup(email: String, password: String, firstname: String, lastname: String, userType: String) {
         // Validate email and password
         if (email.isEmpty() || password.isEmpty()) {
             _authState.value = AuthState.Error("Email or password can't be empty")
@@ -71,18 +91,18 @@ class AuthViewModel : ViewModel() {
                     val user = auth.currentUser
                     val userId = user?.uid
 
-                    // Create a map to store user details
+                    // Create a map to store user details including the userType
                     val userMap = mapOf(
                         "firstname" to firstname,
                         "lastname" to lastname,
                         "email" to email,
-                        "uid" to (userId ?: "")
+                        "uid" to (userId ?: ""),
+                        "userType" to userType // Storing the user type
                     )
 
                     // Store user details in Firestore
-                    val db = FirebaseFirestore.getInstance()
                     userId?.let {
-                        db.collection("users").document(it).set(userMap)
+                        firestore.collection("users").document(it).set(userMap)
                             .addOnSuccessListener {
                                 _authState.value = AuthState.Authenticated
                             }
@@ -98,42 +118,17 @@ class AuthViewModel : ViewModel() {
             }
     }
 
-    // Retrieve user data from Firestore (to show on Profile Page)
-    fun getUserDetails(user: FirebaseUser) {
-        firestore.collection("users").document(user.uid).get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    // Process user data
-                }
-            }
-            .addOnFailureListener {
-                // Handle failure
-            }
-    }
-
-    // Change user password
-    fun changePassword(newPassword: String) {
-        val user = auth.currentUser
-        user?.updatePassword(newPassword)
-            ?.addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    // Password updated successfully
-                } else {
-                    // Handle failure
-                }
-            }
-    }
-
-
-    fun signout(){
+    fun signout() {
         auth.signOut()
         _authState.value = AuthState.Unauthenticated
+        _userType.value = null // Reset user type on logout
     }
 }
 
-sealed class AuthState{
+
+sealed class AuthState {
     object Authenticated : AuthState()
     object Unauthenticated : AuthState()
     object Loading : AuthState()
-    data class Error(val message : String) : AuthState()
+    data class Error(val message: String) : AuthState()
 }
