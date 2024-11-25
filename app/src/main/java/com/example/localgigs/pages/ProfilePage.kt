@@ -41,6 +41,7 @@ fun ProfilePage(modifier: Modifier = Modifier, authViewModel: AuthViewModel, nav
     var lastname by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var jobTitle by remember { mutableStateOf("") }  // Add jobTitle state variable
 
     LaunchedEffect(userId) {
         if (userId != null) {
@@ -50,6 +51,7 @@ fun ProfilePage(modifier: Modifier = Modifier, authViewModel: AuthViewModel, nav
                         firstname = document.getString("firstname") ?: ""
                         lastname = document.getString("lastname") ?: ""
                         email = document.getString("email") ?: ""
+                        jobTitle = document.getString("jobTitle") ?: ""  // Retrieve job title
                     }
                 }
                 .addOnFailureListener { exception ->
@@ -70,7 +72,7 @@ fun ProfilePage(modifier: Modifier = Modifier, authViewModel: AuthViewModel, nav
             text = "Profile Page",
             fontSize = 32.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color.White,
+            color = Color.Black,  // Changed color to black for better visibility
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
@@ -100,16 +102,27 @@ fun ProfilePage(modifier: Modifier = Modifier, authViewModel: AuthViewModel, nav
             enabled = false  // Disable email editing for now
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Job Title field
+        OutlinedTextField(
+            value = jobTitle,
+            onValueChange = { jobTitle = it },
+            label = { Text("Job Title") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
-                // Update user details in Firestore
+                // Update user details including job title in Firestore
                 if (userId != null) {
                     val userMap = mapOf(
                         "firstname" to firstname,
                         "lastname" to lastname,
-                        "email" to email
+                        "email" to email,
+                        "jobTitle" to jobTitle  // Include jobTitle in the update
                     )
 
                     db.collection("users").document(userId).update(userMap)
@@ -163,7 +176,7 @@ fun ProfilePage(modifier: Modifier = Modifier, authViewModel: AuthViewModel, nav
             authViewModel.signout()
             navController.navigate("login")
         }) {
-            Text(text = "Logout", color = Color.White)
+            Text(text = "Logout", color = Color.Black)  // Changed color to black for better visibility
         }
     }
 }

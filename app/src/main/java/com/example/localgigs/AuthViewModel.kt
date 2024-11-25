@@ -29,7 +29,7 @@ class AuthViewModel : ViewModel() {
         if (auth.currentUser == null) {
             _authState.value = AuthState.Unauthenticated
         } else {
-            _authState.value = AuthState.Authenticated
+            _authState.value = AuthState.Authenticated(userType = "client") // Default to "client"
             fetchUserType()
         }
     }
@@ -42,12 +42,16 @@ class AuthViewModel : ViewModel() {
                     if (document.exists()) {
                         val type = document.getString("userType")
                         _userType.value = type ?: "client" // Default to client if not found
+                        // Update the AuthState with the fetched userType
+                        _authState.value = AuthState.Authenticated(userType = _userType.value ?: "client")
                     } else {
                         _userType.value = "client" // Default to client if no user type is found
+                        _authState.value = AuthState.Authenticated(userType = "client")
                     }
                 }
                 .addOnFailureListener {
                     _userType.value = "client" // Default to client in case of an error
+                    _authState.value = AuthState.Authenticated(userType = "client")
                 }
         }
     }
@@ -61,7 +65,7 @@ class AuthViewModel : ViewModel() {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    _authState.value = AuthState.Authenticated
+                    _authState.value = AuthState.Authenticated(userType = "client") // Default userType
                     fetchUserType() // Fetch the user type after successful login
                 } else {
                     _authState.value = AuthState.Error(task.exception?.message ?: "Something went wrong")
@@ -69,7 +73,7 @@ class AuthViewModel : ViewModel() {
             }
     }
 
-    fun signup(email: String, password: String, firstname: String, lastname: String, userType: String) {
+    fun signup(email: String, password: String, firstname: String, lastname: String, userType: String, jobTitle: String) {
         // Validate email and password
         if (email.isEmpty() || password.isEmpty()) {
             _authState.value = AuthState.Error("Email or password can't be empty")
@@ -97,6 +101,7 @@ class AuthViewModel : ViewModel() {
                         "lastname" to lastname,
                         "email" to email,
                         "uid" to (userId ?: ""),
+                        "jobTitle" to jobTitle,
                         "userType" to userType // Storing the user type
                     )
 
@@ -104,7 +109,7 @@ class AuthViewModel : ViewModel() {
                     userId?.let {
                         firestore.collection("users").document(it).set(userMap)
                             .addOnSuccessListener {
-                                _authState.value = AuthState.Authenticated
+                                _authState.value = AuthState.Authenticated(userType = userType) // Pass userType here
                             }
                             .addOnFailureListener { exception ->
                                 _authState.value = AuthState.Error("Failed to save user data: ${exception.message}")
@@ -125,9 +130,8 @@ class AuthViewModel : ViewModel() {
     }
 }
 
-
 sealed class AuthState {
-    object Authenticated : AuthState()
+    data class Authenticated(val userType: String) : AuthState()
     object Unauthenticated : AuthState()
     object Loading : AuthState()
     data class Error(val message: String) : AuthState()

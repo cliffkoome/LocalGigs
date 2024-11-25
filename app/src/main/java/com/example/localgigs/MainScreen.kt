@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import com.example.localgigs.pages.ClientHomePage
+import com.example.localgigs.pages.ClientSearchPage
 import com.example.localgigs.pages.HomePage
 import com.example.localgigs.pages.MessagesPage
 import com.example.localgigs.pages.ProfilePage
@@ -36,7 +37,7 @@ fun MainScreen(
     userId: String
 ) {
     // Check if user is authenticated before showing MainScreen content
-    val isAuthenticated = authViewModel.authState.value == AuthState.Authenticated
+    val isAuthenticated = authViewModel.authState.value is AuthState.Authenticated
     if (!isAuthenticated) {
         // Log for debugging
         Log.d("MainScreen", "User not authenticated, navigating to login.")
@@ -124,7 +125,7 @@ fun ContentScreen(
                 navController = navController,
                 authViewModel = authViewModel
             )
-            1 -> SearchPage(navController = navController)
+            1 -> ClientSearchPage()
             2 -> MessagesPage(
                 navController = navController,
                 userId = userId,

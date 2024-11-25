@@ -26,6 +26,7 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
     var firstname by remember { mutableStateOf("") }
     var lastname by remember { mutableStateOf("") }
     var userType by remember { mutableStateOf("Client") } // Default to "Client"
+    var jobTitle by remember { mutableStateOf("") } // Added Job Title
     var isValid by remember { mutableStateOf(true) } // Basic validation state
 
     val authState = authViewModel.authState.observeAsState()
@@ -33,14 +34,26 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
 
     LaunchedEffect(authState.value) {
         when (authState.value) {
-            is AuthState.Authenticated -> navController.navigate("home")
-            is AuthState.Error -> Toast.makeText(
-                context,
-                (authState.value as AuthState.Error).message, Toast.LENGTH_SHORT
-            ).show()
+            is AuthState.Authenticated -> {
+                // Retrieve the userType from AuthState
+                val userType = (authState.value as AuthState.Authenticated).userType
+                // Navigate to the correct home screen based on userType
+                if (userType == "Client") {
+                    navController.navigate("clientHome") // Navigate to client home screen
+                } else {
+                    navController.navigate("home") // Navigate to professional home screen
+                }
+            }
+            is AuthState.Error -> {
+                Toast.makeText(
+                    context,
+                    (authState.value as AuthState.Error).message, Toast.LENGTH_SHORT
+                ).show()
+            }
             else -> Unit
         }
     }
+
 
     // Basic validation to enable the "Create account" button
     isValid = email.isNotBlank() && password.length >= 6 && firstname.isNotBlank() && lastname.isNotBlank()
@@ -71,6 +84,16 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
             value = lastname,
             onValueChange = { lastname = it },
             label = { Text(text = "Last Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Job Title
+        OutlinedTextField(
+            value = jobTitle,
+            onValueChange = { jobTitle = it },
+            label = { Text(text = "Job Title") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -138,7 +161,7 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
 
         // Create Account Button
         Button(
-            onClick = { authViewModel.signup(email, password, firstname, lastname, userType) },
+            onClick = { authViewModel.signup(email, password, firstname, lastname, userType, jobTitle) },
             enabled = isValid && authState.value != AuthState.Loading,
             modifier = Modifier.fillMaxWidth()
         ) {

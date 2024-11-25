@@ -1,5 +1,6 @@
 package com.example.localgigs
 
+import com.example.localgigs.pages.ClientSearchPage
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -28,7 +29,7 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
     val currentUserId = authViewModel.currentUserId
 
     // Determine if user is authenticated and has a professional role
-    val isAuthenticated = authViewModel.authState.value == AuthState.Authenticated
+    val isAuthenticated = authViewModel.authState.value is AuthState.Authenticated
     val userTypeState by authViewModel.userType.observeAsState(initial = null)
 
     val startDestination = if (isAuthenticated) {
@@ -91,6 +92,10 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
                 navController = navController,
                 userEmail = userEmail
             )
+        }
+
+        composable("ClientSearch") {
+            ClientSearchPage()
         }
 
         composable(
