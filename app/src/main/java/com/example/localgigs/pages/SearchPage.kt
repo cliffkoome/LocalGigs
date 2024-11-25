@@ -56,7 +56,7 @@ fun SearchPage(modifier: Modifier = Modifier, navController: NavController) {
                 // Filter jobs based on title search query and exclude jobs with 'assigned' status
                 val title = job["title"] as? String ?: ""
                 val status = job["status"] as? String ?: ""
-                title.contains(searchQuery, ignoreCase = true) && status != "assigned"
+                title.contains(searchQuery, ignoreCase = true) && status != "assigned" && status != "completed"
             }) { job ->
                 val jobId = job["jobId"] as? String ?: ""
                 val title = job["title"] as? String ?: "No Title"
