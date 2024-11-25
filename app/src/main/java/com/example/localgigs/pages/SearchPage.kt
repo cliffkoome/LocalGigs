@@ -26,7 +26,10 @@ fun SearchPage(modifier: Modifier = Modifier, navController: NavController) {
         db.collection("jobs")
             .get()
             .addOnSuccessListener { snapshot ->
-                jobList = snapshot.documents.map { it.data ?: emptyMap() }
+                jobList = snapshot.documents.map { document ->
+                    val jobData = document.data ?: emptyMap<String, Any>()
+                    jobData + mapOf("jobId" to document.id) // Add jobId to each job
+                }
             }
     }
 
@@ -53,12 +56,20 @@ fun SearchPage(modifier: Modifier = Modifier, navController: NavController) {
                 val title = job["title"] as? String ?: ""
                 title.contains(searchQuery, ignoreCase = true)
             }) { job ->
+                val jobId = job["jobId"] as? String ?: ""
+                val title = job["title"] as? String ?: "No Title"
+                val location = job["location"] as? String ?: "Unknown"
+                val pay = job["pay"] as? Double ?: 0.0
+                val description = job["description"] as? String ?: "No Description"
+                val professionalEmail = job["professionalEmail"] as? String ?: ""  // Assume this field is in Firestore
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(4.dp)
                         .clickable {
-                            navController.navigate("jobView/${job["title"]}/${job["location"]}/${job["pay"]}/${job["description"]}")
+                            // Pass the job details along with professionalEmail to the JobViewPage
+                            navController.navigate("jobView/$jobId/$title/$location/$pay/$description/$professionalEmail")
                         },
                     shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9))
@@ -68,17 +79,17 @@ fun SearchPage(modifier: Modifier = Modifier, navController: NavController) {
                             .padding(8.dp)
                     ) {
                         Text(
-                            text = job["title"] as? String ?: "No Title",
+                            text = title,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Location: ${(job["location"] as? String) ?: "Unknown"}",
+                            text = "Location: $location",
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
                         Text(
-                            text = "Pay: KES ${(job["pay"] as? Double)?.toString() ?: "Negotiable"}",
+                            text = "Pay: KES ${pay.toString()}",
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
@@ -88,4 +99,3 @@ fun SearchPage(modifier: Modifier = Modifier, navController: NavController) {
         }
     }
 }
-

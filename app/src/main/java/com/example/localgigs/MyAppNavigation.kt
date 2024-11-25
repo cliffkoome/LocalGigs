@@ -100,20 +100,29 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
         }
 
         composable(
-            "jobView/{title}/{location}/{pay}/{description}",
+            "jobView/{jobId}/{title}/{location}/{pay}/{description}/{professionalEmail}",
             arguments = listOf(
+                navArgument("jobId") { type = NavType.StringType },
                 navArgument("title") { type = NavType.StringType },
                 navArgument("location") { type = NavType.StringType },
                 navArgument("pay") { type = NavType.StringType },
-                navArgument("description") { type = NavType.StringType }
+                navArgument("description") { type = NavType.StringType },
+                navArgument("professionalEmail") { type = NavType.StringType }
             )
         ) { backStackEntry ->
+            // Get the jobId and other job details from the backStackEntry
+            val jobId = backStackEntry.arguments?.getString("jobId") ?: ""
             val title = backStackEntry.arguments?.getString("title") ?: "No Title"
             val location = backStackEntry.arguments?.getString("location") ?: "Unknown"
             val pay = backStackEntry.arguments?.getString("pay") ?: "Negotiable"
             val description = backStackEntry.arguments?.getString("description") ?: "Unknown"
-            JobViewPage(navController, title, location, pay, description)
+            val professionalEmail = backStackEntry.arguments?.getString("professionalEmail") ?: ""
+
+
+            // Pass jobId to JobViewPage along with other details
+            JobViewPage(navController, jobId, title, location, pay, description, professionalEmail)
         }
+
         composable("professional_details_page/{userEmail}") { backStackEntry ->
             val userEmail = backStackEntry.arguments?.getString("userEmail") ?: ""
             ProfessionalDetailsPage(userEmail = userEmail)
