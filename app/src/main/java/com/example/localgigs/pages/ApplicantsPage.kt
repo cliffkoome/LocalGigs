@@ -160,6 +160,9 @@ fun approveApplicant(
     val formattedTime = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
         .format(java.util.Date(currentTime)) // Format the time as a string
 
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val currentUserEmail = currentUser?.email ?: "" // Get current user's email
+
     // Fetch job title from Firestore
     db.collection("jobs").document(jobId).get()
         .addOnSuccessListener { document ->
@@ -170,7 +173,8 @@ fun approveApplicant(
                 val upcomingJob = hashMapOf(
                     "Title" to jobTitle, // Use fetched job title
                     "Scheduled" to formattedTime,
-                    "AssignedTo" to applicant.email // Store the email of the approved applicant
+                    "AssignedTo" to applicant.email, // Store the email of the approved applicant
+                    "postedBy" to currentUserEmail // Store the email of the current user who posted the job
                 )
 
                 db.collection("upcomingjobs")
@@ -178,7 +182,12 @@ fun approveApplicant(
                     .addOnSuccessListener {
                         // Update the status field to 'assigned' in the job document
                         db.collection("jobs").document(jobId)
-                            .update("status", "assigned")
+                            .update(
+                                mapOf(
+                                    "status" to "assigned",
+                                    "AssignedTo" to applicant.uid
+                                )
+                            )
                             .addOnSuccessListener {
                                 Toast.makeText(null, "Applicant Approved and Job Status Updated!", Toast.LENGTH_SHORT).show()
                             }

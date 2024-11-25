@@ -64,13 +64,17 @@ fun HomePage(
                         mapOf(
                             "Title" to (document.getString("Title") ?: ""),
                             "Status" to (document.getString("Status") ?: ""),
-                            "pay" to (document.getDouble("pay") ?: 0.0) // Assuming pay is a number
+                            "pay" to (document.getDouble("pay") ?: 0.0),
+                            "completedBy" to (document.getString("completedBy") ?: "")
                         )
                     }
+                    // Filter jobs where 'completedBy' matches the current user's email
+                    recentjobs = jobs.filter { job ->
+                        job["completedBy"] == userEmail
+                    } as List<Map<String, String>>
                     // Calculate total earnings from the 'pay' field of all recent jobs
-                    totalEarnings = jobs.sumOf { it["pay"] as Double }
-                    Log.d("HomePage", "Fetched Recent Jobs: $jobs")
-                    recentjobs = jobs as List<Map<String, String>>
+                    totalEarnings = recentjobs.sumOf { it["pay"] as Double }
+                    Log.d("HomePage", "Fetched Recent Jobs: $recentjobs")
                 }
                 .addOnFailureListener { exception ->
                     Toast.makeText(navController.context, "Error fetching recent jobs: ${exception.message}", Toast.LENGTH_SHORT).show()
