@@ -125,7 +125,7 @@ fun ContentScreen(
                 navController = navController,
                 authViewModel = authViewModel
             )
-            1 -> ClientSearchPage()
+            1 -> ClientSearchPage(navController = navController)
             2 -> MessagesPage(
                 navController = navController,
                 userId = userId,

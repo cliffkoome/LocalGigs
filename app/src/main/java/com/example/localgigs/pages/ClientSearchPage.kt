@@ -14,12 +14,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.localgigs.model.User
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 @Composable
-fun ClientSearchPage() {
+fun ClientSearchPage(navController: NavController) {
     // Create mutable states for users, search query, and loading state
     val users = remember { mutableStateListOf<User>() }
     val isLoading = remember { mutableStateOf(true) }
@@ -77,7 +78,7 @@ fun ClientSearchPage() {
                     }
                 } else {
                     items(filteredUsers) { user ->
-                        UserCard(user)
+                        UserCard(user = user, navController = navController)
                     }
                 }
             }
@@ -86,15 +87,15 @@ fun ClientSearchPage() {
 }
 
 
-
 @Composable
-fun UserCard(user: User) {
+fun UserCard(user: User, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(4.dp)
             .clickable {
-                // Placeholder for later functionality (e.g., navigate to user profile)
+                // Navigate to the professional details page and pass the user's email
+                navController.navigate("professional_details_page/${user.email}")
             },
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9))

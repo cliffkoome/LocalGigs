@@ -16,6 +16,7 @@ import com.example.localgigs.pages.ClientHomePage
 import com.example.localgigs.pages.JobViewPage
 import com.example.localgigs.pages.LoginPage
 import com.example.localgigs.pages.PostJobPage
+import com.example.localgigs.pages.ProfessionalDetailsPage
 import com.example.localgigs.pages.SignupPage
 import com.example.localgigs.pages.UsersListPage
 import com.example.localgigs.repository.MessageRepository
@@ -95,7 +96,7 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
         }
 
         composable("ClientSearch") {
-            ClientSearchPage()
+            ClientSearchPage(navController = navController)
         }
 
         composable(
@@ -112,6 +113,10 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
             val pay = backStackEntry.arguments?.getString("pay") ?: "Negotiable"
             val description = backStackEntry.arguments?.getString("description") ?: "Unknown"
             JobViewPage(navController, title, location, pay, description)
+        }
+        composable("professional_details_page/{userEmail}") { backStackEntry ->
+            val userEmail = backStackEntry.arguments?.getString("userEmail") ?: ""
+            ProfessionalDetailsPage(userEmail = userEmail)
         }
     }
 }
