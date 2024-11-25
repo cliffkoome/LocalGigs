@@ -18,6 +18,7 @@ import com.example.localgigs.pages.JobViewPage
 import com.example.localgigs.pages.LoginPage
 import com.example.localgigs.pages.PostJobPage
 import com.example.localgigs.pages.ProfessionalDetailsPage
+import com.example.localgigs.pages.SearchPage
 import com.example.localgigs.pages.SignupPage
 import com.example.localgigs.pages.UsersListPage
 import com.example.localgigs.repository.MessageRepository
@@ -50,6 +51,9 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
         }
         composable("signup") {
             SignupPage(modifier, navController, authViewModel)
+        }
+        composable("search") { 
+            SearchPage(navController = navController)
         }
         composable("client home") {
             ClientHomePage(

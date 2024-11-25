@@ -7,7 +7,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -41,7 +40,8 @@ fun ProfilePage(modifier: Modifier = Modifier, authViewModel: AuthViewModel, nav
     var lastname by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var jobTitle by remember { mutableStateOf("") }  // Add jobTitle state variable
+    var jobTitle by remember { mutableStateOf("") }
+    var skills by remember { mutableStateOf("") }  // Add skills state variable
 
     LaunchedEffect(userId) {
         if (userId != null) {
@@ -51,7 +51,8 @@ fun ProfilePage(modifier: Modifier = Modifier, authViewModel: AuthViewModel, nav
                         firstname = document.getString("firstname") ?: ""
                         lastname = document.getString("lastname") ?: ""
                         email = document.getString("email") ?: ""
-                        jobTitle = document.getString("jobTitle") ?: ""  // Retrieve job title
+                        jobTitle = document.getString("jobTitle") ?: ""
+                        skills = document.getString("skills") ?: ""  // Retrieve skills
                     }
                 }
                 .addOnFailureListener { exception ->
@@ -72,7 +73,7 @@ fun ProfilePage(modifier: Modifier = Modifier, authViewModel: AuthViewModel, nav
             text = "Profile Page",
             fontSize = 32.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color.Black,  // Changed color to black for better visibility
+            color = Color.Black,
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
@@ -99,12 +100,11 @@ fun ProfilePage(modifier: Modifier = Modifier, authViewModel: AuthViewModel, nav
             onValueChange = { email = it },
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
-            enabled = false  // Disable email editing for now
+            enabled = false
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Job Title field
         OutlinedTextField(
             value = jobTitle,
             onValueChange = { jobTitle = it },
@@ -112,17 +112,28 @@ fun ProfilePage(modifier: Modifier = Modifier, authViewModel: AuthViewModel, nav
             modifier = Modifier.fillMaxWidth(),
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Skills field
+        OutlinedTextField(
+            value = skills,
+            onValueChange = { skills = it },
+            label = { Text("Skills") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
-                // Update user details including job title in Firestore
+                // Update user details including skills in Firestore
                 if (userId != null) {
                     val userMap = mapOf(
                         "firstname" to firstname,
                         "lastname" to lastname,
                         "email" to email,
-                        "jobTitle" to jobTitle  // Include jobTitle in the update
+                        "jobTitle" to jobTitle,
+                        "skills" to skills  // Include skills in the update
                     )
 
                     db.collection("users").document(userId).update(userMap)
@@ -176,7 +187,7 @@ fun ProfilePage(modifier: Modifier = Modifier, authViewModel: AuthViewModel, nav
             authViewModel.signout()
             navController.navigate("login")
         }) {
-            Text(text = "Logout", color = Color.Black)  // Changed color to black for better visibility
+            Text(text = "Logout", color = Color.Black)
         }
     }
 }

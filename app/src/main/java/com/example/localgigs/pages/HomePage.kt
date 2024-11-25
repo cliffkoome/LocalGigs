@@ -111,9 +111,6 @@ fun HomePage(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = { navController.navigate("search") }) {
-                Text("Search Jobs")
-            }
             TextButton(onClick = { authViewModel.signout() }) {
                 Text("Sign Out", color = Color.Red)
             }
