@@ -140,6 +140,7 @@ fun fetchApplicants(
                 }
             }
 
+
             onResult(jobTitle, applicants) // Return title and applicants list
         }
         .addOnFailureListener { exception ->
@@ -206,9 +207,6 @@ fun approveApplicant(
             Toast.makeText(null, "Error fetching job: ${exception.message}", Toast.LENGTH_SHORT).show()
         }
 }
-
-
-
 
 
 
