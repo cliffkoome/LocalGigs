@@ -16,6 +16,7 @@ import com.example.localgigs.pages.ChatScreen
 import com.example.localgigs.pages.ClientHomePage
 import com.example.localgigs.pages.JobViewPage
 import com.example.localgigs.pages.LoginPage
+import com.example.localgigs.pages.ManageJobsPage
 import com.example.localgigs.pages.PostJobPage
 import com.example.localgigs.pages.ProfessionalDetailsPage
 import com.example.localgigs.pages.SearchPage
@@ -67,6 +68,23 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
                 navController = navController,
                 userTypeState  == "Professional",
                 userId = currentUserId ?: ""
+            )
+        }
+        composable(
+            route = "ManageJobsPage/{jobId}/{jobTitle}/{jobDescription}/{jobPay}/{jobLocation}"
+        ) { backStackEntry ->
+            val jobId = backStackEntry.arguments?.getString("jobId") ?: ""
+            val jobTitle = backStackEntry.arguments?.getString("jobTitle") ?: ""
+            val jobDescription = backStackEntry.arguments?.getString("jobDescription") ?: ""
+            val jobPay = backStackEntry.arguments?.getString("jobPay")?.toDouble() ?: 0.0
+            val jobLocation = backStackEntry.arguments?.getString("jobLocation") ?: ""
+            ManageJobsPage(
+                navController = navController,
+                jobId = jobId,
+                jobTitle = jobTitle,
+                jobDescription = jobDescription,
+                jobPay = jobPay,
+                jobLocation = jobLocation
             )
         }
         composable("users") {

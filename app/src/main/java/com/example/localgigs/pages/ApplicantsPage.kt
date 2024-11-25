@@ -16,9 +16,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
+import com.example.localgigs.model.JobApplication
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.ktx.toObject
 import com.example.localgigs.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
+
 @Composable
 fun ApplicantsPage(
     jobId: String, // Job ID passed to the page

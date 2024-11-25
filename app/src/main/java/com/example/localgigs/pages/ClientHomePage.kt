@@ -1,6 +1,5 @@
 package com.example.localgigs.pages
 
-import Job
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,6 +20,7 @@ import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.ktx.toObject
 import com.example.localgigs.AuthState
 import com.example.localgigs.AuthViewModel
+import com.example.localgigs.model.Job
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable

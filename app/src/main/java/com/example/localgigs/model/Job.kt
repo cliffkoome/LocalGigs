@@ -1,3 +1,5 @@
+package com.example.localgigs.model
+
 data class Job(
     val title: String = "",
     val description: String = "",
