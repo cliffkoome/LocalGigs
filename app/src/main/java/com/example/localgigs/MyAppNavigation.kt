@@ -1,5 +1,6 @@
 package com.example.localgigs
 
+import android.net.Uri
 import com.example.localgigs.pages.ClientSearchPage
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -73,11 +74,12 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
         composable(
             route = "ManageJobsPage/{jobId}/{jobTitle}/{jobDescription}/{jobPay}/{jobLocation}"
         ) { backStackEntry ->
-            val jobId = backStackEntry.arguments?.getString("jobId") ?: ""
-            val jobTitle = backStackEntry.arguments?.getString("jobTitle") ?: ""
-            val jobDescription = backStackEntry.arguments?.getString("jobDescription") ?: ""
-            val jobPay = backStackEntry.arguments?.getString("jobPay")?.toDouble() ?: 0.0
-            val jobLocation = backStackEntry.arguments?.getString("jobLocation") ?: ""
+            val jobId = backStackEntry.arguments?.getString("jobId")?.let { Uri.decode(it) } ?: ""
+            val jobTitle = backStackEntry.arguments?.getString("jobTitle")?.let { Uri.decode(it) } ?: ""
+            val jobDescription = backStackEntry.arguments?.getString("jobDescription")?.let { Uri.decode(it) } ?: ""
+            val jobPay = backStackEntry.arguments?.getString("jobPay")?.toDoubleOrNull() ?: 0.0
+            val jobLocation = backStackEntry.arguments?.getString("jobLocation")?.let { Uri.decode(it) } ?: ""
+
             ManageJobsPage(
                 navController = navController,
                 jobId = jobId,
@@ -87,6 +89,7 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
                 jobLocation = jobLocation
             )
         }
+
         composable("users") {
             // Fetch the list of users (replace with actual data fetching logic)
             val users = listOf("User1", "User2", "User3") // Replace with actual user fetching logic

@@ -1,5 +1,6 @@
 package com.example.localgigs.pages
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,8 +21,8 @@ import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.ktx.toObject
 import com.example.localgigs.AuthState
 import com.example.localgigs.AuthViewModel
-import com.example.localgigs.model.Job
 import com.google.firebase.auth.FirebaseAuth
+import com.example.localgigs.model.Job
 
 @Composable
 fun ClientHomePage(
@@ -33,7 +34,8 @@ fun ClientHomePage(
     val authState = authViewModel.authState.observeAsState()
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
-    var jobs by remember { mutableStateOf<List<Job>>(emptyList()) }
+    var postedJobs by remember { mutableStateOf<List<Job>>(emptyList()) }
+    var ongoingJobs by remember { mutableStateOf<List<Job>>(emptyList()) }
     var firstname by remember { mutableStateOf("") } // Example for the client's first name
 
     // Fetch user's first name from Firestore
@@ -51,27 +53,18 @@ fun ClientHomePage(
         }
     }
 
-    // Fetch jobs from Firestore filtered by postedBy field
+    // Fetch posted jobs and ongoing jobs from Firestore
     LaunchedEffect(user?.email) {
         val userEmail = user?.email
         if (userEmail != null) {
-            fetchJobs(db, userEmail) { fetchedJobs ->
-                jobs = fetchedJobs
+            fetchJobs(db, userEmail, "postedBy") { fetchedJobs ->
+                postedJobs = fetchedJobs
+            }
+            fetchJobs(db, userEmail, "status", "assigned") { fetchedJobs ->
+                ongoingJobs = fetchedJobs
             }
         }
     }
-
-    // Job data class
-    data class Job(
-        val title: String = "",
-        val description: String = "",
-        val category: String = "",
-        val pay: Double,
-        val location: String = "",
-        val jobType: String = "",
-        val skills: String = "",
-        val jobId: String = "" // Added jobId for navigation
-    )
 
     Column(
         modifier = modifier
@@ -115,24 +108,37 @@ fun ClientHomePage(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Jobs list Section
+        // Posted Jobs Section
         Text(
             text = "Your Posted Jobs",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-
-        // Displaying list of posted jobs
         LazyColumn(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxWidth()
         ) {
-            items(jobs) { job ->
+            items(postedJobs) { job ->
                 JobCard(job, navController)
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Ongoing Jobs Section
+        Text(
+            text = "Ongoing Jobs",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            items(ongoingJobs) { job ->
+                OngoingJobCard(job, navController) // Use OngoingJobCard here
+            }
+        }
     }
 
     LaunchedEffect(authState.value) {
@@ -164,11 +170,62 @@ fun JobCard(job: Job, navController: NavController) {
         }
     }
 }
+// Updated Ongoing Job Card to be clickable
+@Composable
+fun OngoingJobCard(job: Job, navController: NavController) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable {
+                navController.navigate(
+                    "ManageJobsPage/${
+                        Uri.encode(job.jobId)
+                    }/${
+                        Uri.encode(job.title)
+                    }/${
+                        Uri.encode(job.description)
+                    }/${
+                        job.pay
+                    }/${
+                        Uri.encode(job.location)
+                    }"
+                )
+            }
+        ,
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = job.title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = job.description,
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+        }
+    }
+}
 
-fun fetchJobs(db: FirebaseFirestore, userEmail: String, onResult: (List<Job>) -> Unit) {
-    db.collection("jobs")
-        .whereEqualTo("postedBy", userEmail) // Filter jobs by 'postedBy' field
-        .get()
+fun fetchJobs(
+    db: FirebaseFirestore,
+    userEmail: String,
+    filterField: String,
+    filterValue: String? = null,
+    onResult: (List<Job>) -> Unit
+) {
+    val query = when (filterField) {
+        "status" -> db.collection("jobs")
+            .whereEqualTo("status", filterValue)  // For ongoing jobs, filter by "status"
+            .whereEqualTo("postedBy", userEmail)  // Only show jobs where postedBy matches current user email
+        else -> db.collection("jobs").whereEqualTo(filterField, userEmail)
+    }
+
+    query.get()
         .addOnSuccessListener { result: QuerySnapshot ->
             val fetchedJobs = result.documents.mapNotNull { document ->
                 val job = document.toObject<Job>()

@@ -1,20 +1,9 @@
 package com.example.localgigs.pages
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -33,34 +22,56 @@ fun ManageJobsPage(
     jobLocation: String
 ) {
     val db = FirebaseFirestore.getInstance()
-    var professionalName by remember { mutableStateOf("") }
-    var professionalTitle by remember { mutableStateOf("") }
-    var professionalEmail by remember { mutableStateOf("") }
+
+    var professionalName by remember { mutableStateOf("Fetching...") }
+    var professionalTitle by remember { mutableStateOf("Fetching...") }
+    var professionalEmail by remember { mutableStateOf("Fetching...") }
 
     // Fetch professional details from Firestore
     LaunchedEffect(jobId) {
-        db.collection("jobs").document(jobId).get()
-            .addOnSuccessListener { document ->
-                val assignedProfessionalId = document.getString("AssignedTo")
-                if (assignedProfessionalId != null) {
-                    db.collection("users").document(assignedProfessionalId).get()
-                        .addOnSuccessListener { userDocument ->
-                            val firstname = userDocument.getString("firstname") ?: "Unknown"
-                            val lastname = userDocument.getString("lastname") ?: "Unknown"
-                            val jobTitle = userDocument.getString("jobTitle") ?: "Unknown"
-                            professionalEmail = userDocument.getString("email") ?: "Unknown"
-                            professionalName = "$firstname $lastname"
-                            professionalTitle = jobTitle
-                        }
-                        .addOnFailureListener {
-                            Toast.makeText(
-                                navController.context,
-                                "Failed to fetch professional details.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+        if (jobId.isNotEmpty()) {
+            db.collection("jobs").document(jobId).get()
+                .addOnSuccessListener { document ->
+                    val assignedProfessionalId = document.getString("AssignedTo")
+                    if (!assignedProfessionalId.isNullOrEmpty()) {
+                        db.collection("users").document(assignedProfessionalId).get()
+                            .addOnSuccessListener { userDocument ->
+                                professionalName = userDocument.getString("firstname")?.let { firstname ->
+                                    "${firstname} ${userDocument.getString("lastname") ?: "Unknown"}"
+                                } ?: "Unknown"
+                                professionalTitle = userDocument.getString("jobTitle") ?: "Unknown"
+                                professionalEmail = userDocument.getString("email") ?: "Unknown"
+                            }
+                            .addOnFailureListener {
+                                professionalName = "Error fetching name"
+                                professionalTitle = "Error fetching title"
+                                professionalEmail = "Error fetching email"
+                                Toast.makeText(
+                                    navController.context,
+                                    "Failed to fetch professional details.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                    } else {
+                        professionalName = "Not Assigned"
+                        professionalTitle = "Not Assigned"
+                        professionalEmail = "Not Assigned"
+                    }
                 }
-            }
+                .addOnFailureListener {
+                    Toast.makeText(
+                        navController.context,
+                        "Failed to fetch job details.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+        } else {
+            Toast.makeText(
+                navController.context,
+                "Invalid job ID.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     Column(
@@ -74,24 +85,24 @@ fun ManageJobsPage(
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Job Details",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
-        )
+
+        // Job Details Section
+        Text(text = "Job Details", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Text(text = "Title: $jobTitle")
         Text(text = "Description: $jobDescription")
         Text(text = "Pay: $jobPay")
         Text(text = "Location: $jobLocation")
+
         Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Professional Assigned",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
-        )
+
+        // Professional Details Section
+        Text(text = "Professional Assigned", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Text(text = "Name: $professionalName")
         Text(text = "Title: $professionalTitle")
+
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Back Button
         Button(
             onClick = {
                 navController.popBackStack()
@@ -100,14 +111,16 @@ fun ManageJobsPage(
         ) {
             Text(text = "Back", color = Color.White)
         }
+
         Spacer(modifier = Modifier.height(8.dp))
+
+        // Complete Job Button
         Button(
             onClick = {
                 // Update job status to "completed"
                 db.collection("jobs").document(jobId)
                     .update("status", "completed")
                     .addOnSuccessListener {
-                        // Remove the job from the "upcomingjobs" collection
                         db.collection("upcomingjobs")
                             .whereEqualTo("Title", jobTitle)
                             .whereEqualTo("AssignedTo", professionalEmail)
@@ -116,7 +129,7 @@ fun ManageJobsPage(
                                 for (document in querySnapshot) {
                                     db.collection("upcomingjobs").document(document.id).delete()
                                 }
-                                // Add a record to the "recentjobs" collection
+                                // Add a record to "recentjobs"
                                 val recentJob = hashMapOf(
                                     "Status" to "Completed",
                                     "Title" to jobTitle,
@@ -157,7 +170,7 @@ fun ManageJobsPage(
             },
             colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
         ) {
-            Text(text = "Completed", color = Color.White)
+            Text(text = "Mark as Completed", color = Color.White)
         }
     }
 }

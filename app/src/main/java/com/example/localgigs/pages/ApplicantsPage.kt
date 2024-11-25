@@ -119,27 +119,25 @@ fun fetchApplicants(
     onResult: (String, List<JobApplication>) -> Unit
 ) {
     db.collection("jobs")
-        .document(jobId) // Use the jobId to get the specific job document
+        .document(jobId)
         .get()
         .addOnSuccessListener { document ->
-            val jobTitle = document.getString("title") ?: "" // Fetch job title
-            val jobStatus = document.getString("status") ?: "" // Fetch job status
+            val jobTitle = document.getString("title") ?: ""
+            val jobStatus = document.getString("status") ?: ""
 
             // Check if job status is "assigned"
-            if (jobStatus == "assigned") {
+            if (jobStatus == "assigned" || jobStatus == "completed") {
                 onResult(jobTitle, emptyList()) // Return empty list if job is already assigned
                 return@addOnSuccessListener
             }
 
             val applicants = mutableListOf<JobApplication>()
-            val applicantsMap = document.get("applicants") as? Map<String, Any>
+            val applicantsMap = document.get("applicants") as? Map<String, String>
 
-            applicantsMap?.forEach { (key, value) ->
-                if (value is String) {
-                    applicants.add(JobApplication(name = key, email = value)) // Creating a JobApplication object with email
-                }
+            applicantsMap?.forEach { (key, email) ->
+                // Each applicant is stored with a key like "applicant1", and the value is just the email
+                applicants.add(JobApplication(name = key, email = email)) // Add applicant with email
             }
-
 
             onResult(jobTitle, applicants) // Return title and applicants list
         }
@@ -157,63 +155,79 @@ fun approveApplicant(
     jobId: String,
     applicant: JobApplication
 ) {
-    val currentTime = System.currentTimeMillis() // Get current timestamp
+    val currentTime = System.currentTimeMillis()
     val formattedTime = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
-        .format(java.util.Date(currentTime)) // Format the time as a string
+        .format(java.util.Date(currentTime))
 
     val currentUser = FirebaseAuth.getInstance().currentUser
-    val currentUserEmail = currentUser?.email ?: "" // Get current user's email
+    val currentUserEmail = currentUser?.email ?: ""
 
-    // Fetch job title from Firestore
-    db.collection("jobs").document(jobId).get()
-        .addOnSuccessListener { document ->
-            if (document.exists()) {
-                val jobTitle = document.getString("title") ?: "" // Fetch job title
+    // Fetch UID based on applicant's email if it's stored in the 'users' collection
+    db.collection("users").whereEqualTo("email", applicant.email)
+        .get()
+        .addOnSuccessListener { querySnapshot ->
+            val userDocument = querySnapshot.documents.firstOrNull()
+            val applicantUid = userDocument?.getString("uid") ?: ""
 
-                // Add the job to the upcoming jobs collection
-                val upcomingJob = hashMapOf(
-                    "Title" to jobTitle, // Use fetched job title
-                    "Scheduled" to formattedTime,
-                    "AssignedTo" to applicant.email, // Store the email of the approved applicant
-                    "postedBy" to currentUserEmail // Store the email of the current user who posted the job
-                )
+            if (applicantUid.isEmpty()) {
+                Toast.makeText(null, "Applicant UID not found!", Toast.LENGTH_SHORT).show()
+                return@addOnSuccessListener
+            }
 
-                db.collection("upcomingjobs")
-                    .add(upcomingJob)
-                    .addOnSuccessListener {
-                        // Update the status field to 'assigned' in the job document
-                        db.collection("jobs").document(jobId)
-                            .update(
-                                mapOf(
-                                    "status" to "assigned",
-                                    "AssignedTo" to applicant.uid
-                                )
-                            )
+            // Get the job details
+            db.collection("jobs").document(jobId).get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val jobTitle = document.getString("title") ?: ""
+
+                        val upcomingJob = hashMapOf(
+                            "Title" to jobTitle,
+                            "Scheduled" to formattedTime,
+                            "AssignedTo" to applicantUid, // Store the applicant's UID
+                            "postedBy" to currentUserEmail
+                        )
+
+                        // Add to upcoming jobs
+                        db.collection("upcomingjobs")
+                            .add(upcomingJob)
                             .addOnSuccessListener {
-                                Toast.makeText(null, "Applicant Approved and Job Status Updated!", Toast.LENGTH_SHORT).show()
+                                // Update job status to 'assigned' and set the applicant's UID in 'AssignedTo'
+                                db.collection("jobs").document(jobId)
+                                    .update(
+                                        mapOf(
+                                            "status" to "assigned",
+                                            "AssignedTo" to applicantUid // Use UID here
+                                        )
+                                    )
+                                    .addOnSuccessListener {
+                                        Toast.makeText(null, "Applicant Approved and Job Status Updated!", Toast.LENGTH_SHORT).show()
+                                    }
+                                    .addOnFailureListener { exception ->
+                                        Toast.makeText(null, "Error updating job status: ${exception.message}", Toast.LENGTH_SHORT).show()
+                                    }
                             }
                             .addOnFailureListener { exception ->
-                                Toast.makeText(null, "Error updating job status: ${exception.message}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(null, "Error approving applicant: ${exception.message}", Toast.LENGTH_SHORT).show()
                             }
+                    } else {
+                        Toast.makeText(null, "Job not found!", Toast.LENGTH_SHORT).show()
                     }
-                    .addOnFailureListener { exception ->
-                        Toast.makeText(null, "Error approving applicant: ${exception.message}", Toast.LENGTH_SHORT).show()
-                    }
-            } else {
-                Toast.makeText(null, "Job not found!", Toast.LENGTH_SHORT).show()
-            }
+                }
+                .addOnFailureListener { exception ->
+                    Toast.makeText(null, "Error fetching job: ${exception.message}", Toast.LENGTH_SHORT).show()
+                }
         }
         .addOnFailureListener { exception ->
-            Toast.makeText(null, "Error fetching job: ${exception.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(null, "Error fetching user UID: ${exception.message}", Toast.LENGTH_SHORT).show()
         }
 }
-
 
 
 // Data class for Job Application (Applicant)
 data class JobApplication(
     val name: String = "",
     val email: String = "",
+    val uid: String = "",
     val experience: Int = 0,
     val skills: String = ""
 )
