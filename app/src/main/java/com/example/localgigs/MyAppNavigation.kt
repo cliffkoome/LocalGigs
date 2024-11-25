@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.localgigs.model.ChatViewModel
+import com.example.localgigs.pages.ApplicantsPage
 import com.example.localgigs.pages.ChatScreen
 import com.example.localgigs.pages.ClientHomePage
 import com.example.localgigs.pages.JobViewPage
@@ -127,5 +128,11 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
             val userEmail = backStackEntry.arguments?.getString("userEmail") ?: ""
             ProfessionalDetailsPage(userEmail = userEmail)
         }
+
+        composable("ApplicantsPage/{jobId}") { backStackEntry ->
+            val jobId = backStackEntry.arguments?.getString("jobId") ?: ""
+            ApplicantsPage(jobId = jobId, navController = navController)
+        }
+
     }
 }

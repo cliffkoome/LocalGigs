@@ -33,6 +33,7 @@ fun HomePage(
     val db = FirebaseFirestore.getInstance()
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
+    val userEmail = user?.email // Get the user's email
     var firstname by remember { mutableStateOf("") }
 
     // Fetch user's first name from Firestore
@@ -53,6 +54,7 @@ fun HomePage(
     // Fetch recent jobs and upcoming jobs from Firestore
     var recentjobs by remember { mutableStateOf<List<Map<String, String>>>(emptyList()) }
     var upcomingjobs by remember { mutableStateOf<List<Map<String, String>>>(emptyList()) }
+    var totalEarnings by remember { mutableStateOf(0.0) }  // Variable for total earnings
 
     LaunchedEffect(userId) {
         if (userId != null) {
@@ -61,11 +63,14 @@ fun HomePage(
                     val jobs = result.map { document ->
                         mapOf(
                             "Title" to (document.getString("Title") ?: ""),
-                            "Status" to (document.getString("Status") ?: "")
+                            "Status" to (document.getString("Status") ?: ""),
+                            "pay" to (document.getDouble("pay") ?: 0.0) // Assuming pay is a number
                         )
                     }
+                    // Calculate total earnings from the 'pay' field of all recent jobs
+                    totalEarnings = jobs.sumOf { it["pay"] as Double }
                     Log.d("HomePage", "Fetched Recent Jobs: $jobs")
-                    recentjobs = jobs
+                    recentjobs = jobs as List<Map<String, String>>
                 }
                 .addOnFailureListener { exception ->
                     Toast.makeText(navController.context, "Error fetching recent jobs: ${exception.message}", Toast.LENGTH_SHORT).show()
@@ -76,11 +81,13 @@ fun HomePage(
                     val jobs = result.map { document ->
                         mapOf(
                             "Title" to (document.getString("Title") ?: ""),
-                            "scheduledAt" to (document.getString("scheduledAt") ?: "")
+                            "Scheduled" to (document.getString("Scheduled") ?: ""),
+                            "AssignedTo" to (document.getString("AssignedTo") ?: "")
                         )
                     }
-                    Log.d("HomePage", "Fetched Upcoming Jobs: $jobs")
-                    upcomingjobs = jobs
+                    // Filter jobs where 'AssignedTo' matches current user's email
+                    upcomingjobs = jobs.filter { job -> job["AssignedTo"] == userEmail }
+                    Log.d("HomePage", "Fetched Upcoming Jobs: $upcomingjobs")
                 }
                 .addOnFailureListener { exception ->
                     Toast.makeText(navController.context, "Error fetching upcoming jobs: ${exception.message}", Toast.LENGTH_SHORT).show()
@@ -126,9 +133,9 @@ fun HomePage(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Earnings Overview (optional)
+        // Earnings Overview (Total Earnings)
         Text(
-            text = "Total Earnings: KES 120000", // Replace with actual total earnings
+            text = "Total Earnings: KES ${"%.2f".format(totalEarnings)}", // Display the total earnings
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold
         )
@@ -199,7 +206,7 @@ fun HomePage(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Scheduled At: ${job["scheduledAt"] ?: ""}",
+                                text = "Scheduled At: ${job["Scheduled"] ?: ""}",
                                 fontSize = 14.sp,
                                 color = Color.Gray
                             )

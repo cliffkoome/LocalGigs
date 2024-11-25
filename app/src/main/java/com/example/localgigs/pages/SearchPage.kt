@@ -53,8 +53,10 @@ fun SearchPage(modifier: Modifier = Modifier, navController: NavController) {
         // Job List
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(jobList.filter { job ->
+                // Filter jobs based on title search query and exclude jobs with 'assigned' status
                 val title = job["title"] as? String ?: ""
-                title.contains(searchQuery, ignoreCase = true)
+                val status = job["status"] as? String ?: ""
+                title.contains(searchQuery, ignoreCase = true) && status != "assigned"
             }) { job ->
                 val jobId = job["jobId"] as? String ?: ""
                 val title = job["title"] as? String ?: "No Title"
@@ -99,3 +101,4 @@ fun SearchPage(modifier: Modifier = Modifier, navController: NavController) {
         }
     }
 }
+

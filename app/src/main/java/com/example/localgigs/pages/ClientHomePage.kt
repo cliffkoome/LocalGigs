@@ -2,6 +2,7 @@ package com.example.localgigs.pages
 
 import Job
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -65,10 +66,11 @@ fun ClientHomePage(
         val title: String = "",
         val description: String = "",
         val category: String = "",
-        val budget: Double = 0.0,
+        val pay: Double,
         val location: String = "",
         val jobType: String = "",
-        val skills: String = ""
+        val skills: String = "",
+        val jobId: String = "" // Added jobId for navigation
     )
 
     Column(
@@ -126,7 +128,7 @@ fun ClientHomePage(
             modifier = Modifier.fillMaxSize()
         ) {
             items(jobs) { job ->
-                JobCard(job)
+                JobCard(job, navController)
             }
         }
 
@@ -141,18 +143,21 @@ fun ClientHomePage(
 }
 
 @Composable
-fun JobCard(job: Job) {
+fun JobCard(job: Job, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp),
+            .padding(bottom = 8.dp)
+            .clickable {
+                navController.navigate("ApplicantsPage/${job.jobId}")
+            },
         colors = CardDefaults.cardColors(containerColor = Color.LightGray)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = job.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Text(text = "Category: ${job.category}")
             Text(text = "Location: ${job.location}")
-            Text(text = "Budget: KES ${job.budget}")
+            Text(text = "Pay: KES ${job.pay}") // Updated from Budget to Pay
             Text(text = "Job Type: ${job.jobType}")
             Text(text = "Skills: ${job.skills}")
             Text(text = "Description: ${job.description}")
@@ -166,7 +171,8 @@ fun fetchJobs(db: FirebaseFirestore, userEmail: String, onResult: (List<Job>) ->
         .get()
         .addOnSuccessListener { result: QuerySnapshot ->
             val fetchedJobs = result.documents.mapNotNull { document ->
-                document.toObject<Job>()
+                val job = document.toObject<Job>()
+                job?.copy(jobId = document.id) // Adding jobId
             }
             onResult(fetchedJobs)
         }
