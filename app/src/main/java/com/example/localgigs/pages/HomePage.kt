@@ -64,7 +64,7 @@ fun HomePage(
                         mapOf(
                             "Title" to (document.getString("Title") ?: ""),
                             "Status" to (document.getString("Status") ?: ""),
-                            "pay" to (document.getDouble("pay") ?: 0.0),
+                            "Pay" to (document.getDouble("Pay") ?: 0.0),
                             "completedBy" to (document.getString("completedBy") ?: "")
                         )
                     }
@@ -72,8 +72,8 @@ fun HomePage(
                     recentjobs = jobs.filter { job ->
                         job["completedBy"] == userEmail
                     } as List<Map<String, String>>
-                    // Calculate total earnings from the 'pay' field of all recent jobs
-                    totalEarnings = recentjobs.sumOf { it["pay"] as Double }
+                    // Calculate total earnings from the 'Pay' field of all recent jobs
+                    totalEarnings = recentjobs.sumOf { it["Pay"] as Double }
                     Log.d("HomePage", "Fetched Recent Jobs: $recentjobs")
                 }
                 .addOnFailureListener { exception ->
@@ -90,7 +90,7 @@ fun HomePage(
                         )
                     }
                     // Filter jobs where 'AssignedTo' matches current user's email
-                    upcomingjobs = jobs.filter { job -> job["AssignedTo"] == userEmail }
+                    upcomingjobs = jobs.filter { job -> job["AssignedTo"] == userId }
                     Log.d("HomePage", "Fetched Upcoming Jobs: $upcomingjobs")
                 }
                 .addOnFailureListener { exception ->

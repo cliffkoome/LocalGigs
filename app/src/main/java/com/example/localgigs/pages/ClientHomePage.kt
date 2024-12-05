@@ -35,8 +35,8 @@ fun ClientHomePage(
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
     var postedJobs by remember { mutableStateOf<List<Job>>(emptyList()) }
-    var ongoingJobs by remember { mutableStateOf<List<Job>>(emptyList()) }
-    var firstname by remember { mutableStateOf("") } // Example for the client's first name
+    var ongoingJobsAssigned by remember { mutableStateOf<List<Job>>(emptyList()) }
+    var firstname by remember { mutableStateOf("") }
 
     // Fetch user's first name from Firestore
     LaunchedEffect(userId) {
@@ -53,7 +53,7 @@ fun ClientHomePage(
         }
     }
 
-    // Fetch posted jobs and ongoing jobs from Firestore
+    // Fetch posted jobs and ongoing jobs (assigned) from Firestore
     LaunchedEffect(user?.email) {
         val userEmail = user?.email
         if (userEmail != null) {
@@ -61,7 +61,7 @@ fun ClientHomePage(
                 postedJobs = fetchedJobs
             }
             fetchJobs(db, userEmail, "status", "assigned") { fetchedJobs ->
-                ongoingJobs = fetchedJobs
+                ongoingJobsAssigned = fetchedJobs
             }
         }
     }
@@ -119,15 +119,19 @@ fun ClientHomePage(
             modifier = Modifier.fillMaxWidth()
         ) {
             items(postedJobs) { job ->
-                JobCard(job, navController)
+                val cardColor = when (job.status) {
+                    "completed" -> Color(0xFFA5D6A7) // Green
+                    else -> Color.LightGray
+                }
+                JobCard(job, navController, cardColor)
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Ongoing Jobs Section
+        // Ongoing Jobs (Posted by User)
         Text(
-            text = "Ongoing Jobs",
+            text = "Ongoing Jobs (Posted by You)",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 8.dp)
@@ -135,8 +139,8 @@ fun ClientHomePage(
         LazyColumn(
             modifier = Modifier.fillMaxWidth()
         ) {
-            items(ongoingJobs) { job ->
-                OngoingJobCard(job, navController) // Use OngoingJobCard here
+            items(ongoingJobsAssigned) { job ->
+                JobCard(job, navController, Color(0xFFFFCC80)) // Orange
             }
         }
     }
@@ -149,27 +153,45 @@ fun ClientHomePage(
 }
 
 @Composable
-fun JobCard(job: Job, navController: NavController) {
+fun JobCard(job: Job, navController: NavController, cardColor: Color) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 8.dp)
             .clickable {
-                navController.navigate("ApplicantsPage/${job.jobId}")
+                if (job.status == "assigned") {
+                    navController.navigate(
+                        "ManageJobsPage/${
+                            Uri.encode(job.jobId)
+                        }/${
+                            Uri.encode(job.title)
+                        }/${
+                            Uri.encode(job.description)
+                        }/${
+                            job.pay
+                        }/${
+                            Uri.encode(job.location)
+                        }"
+                    )
+                } else {
+                    navController.navigate("ApplicantsPage/${job.jobId}")
+                }
             },
-        colors = CardDefaults.cardColors(containerColor = Color.LightGray)
+        colors = CardDefaults.cardColors(containerColor = cardColor)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = job.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Text(text = "Category: ${job.category}")
             Text(text = "Location: ${job.location}")
-            Text(text = "Pay: KES ${job.pay}") // Updated from Budget to Pay
+            Text(text = "Pay: KES ${job.pay}")
             Text(text = "Job Type: ${job.jobType}")
             Text(text = "Skills: ${job.skills}")
             Text(text = "Description: ${job.description}")
+            Text(text = "Status: ${job.status}")
         }
     }
 }
+
 // Updated Ongoing Job Card to be clickable
 @Composable
 fun OngoingJobCard(job: Job, navController: NavController) {
@@ -220,8 +242,8 @@ fun fetchJobs(
 ) {
     val query = when (filterField) {
         "status" -> db.collection("jobs")
-            .whereEqualTo("status", filterValue)  // For ongoing jobs, filter by "status"
-            .whereEqualTo("postedBy", userEmail)  // Only show jobs where postedBy matches current user email
+            .whereEqualTo("status", filterValue)  // For assigned jobs
+            .whereEqualTo("postedBy", userEmail)  // Filter for user's jobs
         else -> db.collection("jobs").whereEqualTo(filterField, userEmail)
     }
 

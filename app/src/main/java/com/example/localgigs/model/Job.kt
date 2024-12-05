@@ -1,12 +1,14 @@
 package com.example.localgigs.model
 
 data class Job(
+    val jobId: String = "",
     val title: String = "",
-    val description: String = "",
     val category: String = "",
-    val pay: Double = 0.0,
     val location: String = "",
+    val pay: Double = 0.0,
     val jobType: String = "",
     val skills: String = "",
-    val jobId: String = "" // Added jobId field
+    val description: String = "",
+    val postedBy: String = "",
+    val status: String = "" // Add the status field
 )

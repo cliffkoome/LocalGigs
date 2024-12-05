@@ -1,5 +1,6 @@
 package com.example.localgigs.pages
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,25 +12,27 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.google.firebase.firestore.FirebaseFirestore
-import com.example.localgigs.model.JobApplication
-import com.google.firebase.firestore.QuerySnapshot
-import com.google.firebase.firestore.ktx.toObject
-import com.example.localgigs.AuthViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.toObject
+import com.example.localgigs.model.JobApplication
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun ApplicantsPage(
-    jobId: String, // Job ID passed to the page
+    jobId: String,
     navController: NavController
 ) {
     val db = FirebaseFirestore.getInstance()
-    var applicants by remember { mutableStateOf<List<JobApplication>>(emptyList()) } // Storing JobApplication objects
-    var jobTitle by remember { mutableStateOf("") } // Storing the job title
+    var applicants by remember { mutableStateOf<List<JobApplication>>(emptyList()) }
+    var jobTitle by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     // Fetch applicants and job title based on jobId
     LaunchedEffect(jobId) {
@@ -50,15 +53,16 @@ fun ApplicantsPage(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // List of applicants (showing only email addresses)
+        // List of applicants
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(applicants) { applicant ->
                 ApplicantCard(
                     applicant = applicant,
                     jobId = jobId,
                     db = db,
+                    context = context,
                     onApprove = { approvedApplicant ->
-                        approveApplicant(db, jobId, approvedApplicant)
+                        approveApplicant(db, jobId, approvedApplicant, context)
                     }
                 )
             }
@@ -66,13 +70,12 @@ fun ApplicantsPage(
     }
 }
 
-
-
 @Composable
 fun ApplicantCard(
     applicant: JobApplication,
     jobId: String,
     db: FirebaseFirestore,
+    context: Context,
     onApprove: (JobApplication) -> Unit
 ) {
     Card(
@@ -89,7 +92,6 @@ fun ApplicantCard(
 
             // Approve and Decline buttons
             Row(modifier = Modifier.padding(top = 8.dp)) {
-                // Approve button (green check)
                 IconButton(onClick = { onApprove(applicant) }) {
                     Icon(
                         imageVector = Icons.Default.Check,
@@ -98,8 +100,7 @@ fun ApplicantCard(
                     )
                 }
 
-                // Decline button (red X)
-                IconButton(onClick = { /* Handle Decline Action (optional) */ }) {
+                IconButton(onClick = { /* Handle Decline Action */ }) {
                     Icon(
                         imageVector = Icons.Default.Clear,
                         contentDescription = "Decline",
@@ -110,8 +111,6 @@ fun ApplicantCard(
         }
     }
 }
-
-
 
 fun fetchApplicants(
     db: FirebaseFirestore,
@@ -125,9 +124,8 @@ fun fetchApplicants(
             val jobTitle = document.getString("title") ?: ""
             val jobStatus = document.getString("status") ?: ""
 
-            // Check if job status is "assigned"
             if (jobStatus == "assigned" || jobStatus == "completed") {
-                onResult(jobTitle, emptyList()) // Return empty list if job is already assigned
+                onResult(jobTitle, emptyList())
                 return@addOnSuccessListener
             }
 
@@ -135,34 +133,26 @@ fun fetchApplicants(
             val applicantsMap = document.get("applicants") as? Map<String, String>
 
             applicantsMap?.forEach { (key, email) ->
-                // Each applicant is stored with a key like "applicant1", and the value is just the email
-                applicants.add(JobApplication(name = key, email = email)) // Add applicant with email
+                applicants.add(JobApplication(name = key, email = email))
             }
 
-            onResult(jobTitle, applicants) // Return title and applicants list
+            onResult(jobTitle, applicants)
         }
         .addOnFailureListener { exception ->
-            Toast.makeText(
-                null, "Error fetching applicants: ${exception.message}",
-                Toast.LENGTH_SHORT
-            ).show()
+            exception.printStackTrace()
         }
 }
-
 
 fun approveApplicant(
     db: FirebaseFirestore,
     jobId: String,
-    applicant: JobApplication
+    applicant: JobApplication,
+    context: Context
 ) {
     val currentTime = System.currentTimeMillis()
-    val formattedTime = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
-        .format(java.util.Date(currentTime))
+    val formattedTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(currentTime))
+    val currentUserEmail = FirebaseAuth.getInstance().currentUser?.email ?: ""
 
-    val currentUser = FirebaseAuth.getInstance().currentUser
-    val currentUserEmail = currentUser?.email ?: ""
-
-    // Fetch UID based on applicant's email if it's stored in the 'users' collection
     db.collection("users").whereEqualTo("email", applicant.email)
         .get()
         .addOnSuccessListener { querySnapshot ->
@@ -170,11 +160,10 @@ fun approveApplicant(
             val applicantUid = userDocument?.getString("uid") ?: ""
 
             if (applicantUid.isEmpty()) {
-                Toast.makeText(null, "Applicant UID not found!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Applicant UID not found!", Toast.LENGTH_SHORT).show()
                 return@addOnSuccessListener
             }
 
-            // Get the job details
             db.collection("jobs").document(jobId).get()
                 .addOnSuccessListener { document ->
                     if (document.exists()) {
@@ -183,51 +172,42 @@ fun approveApplicant(
                         val upcomingJob = hashMapOf(
                             "Title" to jobTitle,
                             "Scheduled" to formattedTime,
-                            "AssignedTo" to applicantUid, // Store the applicant's UID
-                            "postedBy" to currentUserEmail
+                            "AssignedTo" to applicantUid,
+                            "PostedBy" to currentUserEmail
                         )
 
-                        // Add to upcoming jobs
                         db.collection("upcomingjobs")
                             .add(upcomingJob)
                             .addOnSuccessListener {
-                                // Update job status to 'assigned' and set the applicant's UID in 'AssignedTo'
                                 db.collection("jobs").document(jobId)
-                                    .update(
-                                        mapOf(
-                                            "status" to "assigned",
-                                            "AssignedTo" to applicantUid // Use UID here
-                                        )
-                                    )
+                                    .update("status", "assigned", "AssignedTo", applicantUid)
                                     .addOnSuccessListener {
-                                        Toast.makeText(null, "Applicant Approved and Job Status Updated!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Applicant Approved!", Toast.LENGTH_SHORT).show()
                                     }
                                     .addOnFailureListener { exception ->
-                                        Toast.makeText(null, "Error updating job status: ${exception.message}", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Error updating job: ${exception.message}", Toast.LENGTH_SHORT).show()
                                     }
                             }
                             .addOnFailureListener { exception ->
-                                Toast.makeText(null, "Error approving applicant: ${exception.message}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Error adding job: ${exception.message}", Toast.LENGTH_SHORT).show()
                             }
                     } else {
-                        Toast.makeText(null, "Job not found!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Job not found!", Toast.LENGTH_SHORT).show()
                     }
                 }
                 .addOnFailureListener { exception ->
-                    Toast.makeText(null, "Error fetching job: ${exception.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Error fetching job: ${exception.message}", Toast.LENGTH_SHORT).show()
                 }
         }
         .addOnFailureListener { exception ->
-            Toast.makeText(null, "Error fetching user UID: ${exception.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Error fetching applicant UID: ${exception.message}", Toast.LENGTH_SHORT).show()
         }
 }
 
-
-// Data class for Job Application (Applicant)
+// Data class for Job Application
 data class JobApplication(
     val name: String = "",
     val email: String = "",
-    val uid: String = "",
     val experience: Int = 0,
     val skills: String = ""
 )
