@@ -11,20 +11,34 @@ LocalGigs is a platform that connects clients with verified local professionals 
 - **Professional Listings:**
   - View and search for professionals based on categories and location.
 
-- **Chat System:**
+- **Chat System: {Not Complete}**
   - Real-time messaging between clients and professionals.
   - Firebase Firestore for storing messages.
 
 - **Job Management:**
   - Post job requests.
   - Accept and manage job offers.
+  - View ongoing and completed jobs.
 
-- **Review System:**
+- **Review System: {Not Complete}**
   - Rate and review professionals after service completion.
 
-- **Revenue Streams:**
+- **Revenue Streams: {Not Complete}**
   - Subscription plans for professionals.
   - Transaction fees and in-app advertisements.
+
+- **Dashboard:**
+  - Personalized client and professional dashboards.
+  - Access to job history and performance statistics.
+
+- **Notifications: {Not Complete}**
+  - Real-time push notifications for job updates, messages, and reviews.
+
+- **Geo-targeted Listings: {Not Complete}**
+  - Match clients with professionals in their vicinity.
+
+- **Profile Verification:**
+  - Ensure authenticity and trustworthiness of professionals.
 
 ## Project Structure
 
@@ -35,13 +49,16 @@ LocalGigs/
 │   │   ├── main/
 │   │   │   ├── java/com/example/localgigs/
 │   │   │   │   ├── auth/                # Authentication logic
-│   │   │   │   ├── model/               # Data models (User, Message, etc.)
+│   │   │   │   ├── model/               # Data models (User, Job, Message, etc.)
 │   │   │   │   ├── pages/               # Composable pages (Login, Home, etc.)
 │   │   │   │   ├── repository/          # Firebase interaction logic
 │   │   │   │   ├── ui/                  # UI components
 │   │   │   │   ├── utils/               # Utility functions
 │   │   │   │   ├── MainActivity.kt      # Entry point of the app
 │   │   │   │   ├── MyAppNavigation.kt   # Navigation setup
+│   │   │   │   ├── notifications/       # Push notifications logic
+│   │   │   │   ├── dashboard/           # Client and professional dashboards
+│   │   │   │   ├── jobs/                # Job management logic
 ├── README.md
 ├── build.gradle
 └── ...
@@ -51,7 +68,7 @@ LocalGigs/
 
 - Android Studio (Arctic Fox or later)
 - Java 11
-- Firebase Project with Firestore and Authentication enabled
+- Firebase Project with Firestore, Authentication, and Cloud Messaging enabled
 
 ## Setup Instructions
 
@@ -81,6 +98,9 @@ LocalGigs/
 - **HomePage:** Main dashboard with options to navigate to professional listings, chat, and settings.
 - **UsersListPage:** Displays a list of professionals for the user to initiate chats.
 - **ChatScreen:** Real-time messaging functionality between users.
+- **JobManagementPage:** Manage posted jobs, view ongoing and completed jobs.
+- **NotificationPage:** Access and manage real-time push notifications.
+- **ProfilePage:** User profile management and verification.
 
 ## Contribution Guidelines
 
@@ -99,9 +119,6 @@ LocalGigs/
    ```
 5. Create a pull request on the main repository.
 
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## Acknowledgements
 
