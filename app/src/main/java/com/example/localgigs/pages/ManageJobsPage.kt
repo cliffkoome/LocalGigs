@@ -107,7 +107,7 @@ fun ManageJobsPage(
             onClick = {
                 navController.popBackStack()
             },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
         ) {
             Text(text = "Back", color = Color.White)
         }
@@ -168,9 +168,9 @@ fun ManageJobsPage(
                         ).show()
                     }
             },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
+            colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
         ) {
-            Text(text = "Mark as Completed", color = Color.White)
+            Text(text = "Mark as Completed", color = Color.Black)
         }
     }
 }

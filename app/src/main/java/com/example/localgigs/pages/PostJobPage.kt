@@ -141,7 +141,7 @@ fun PostJobPage(navController: NavController, userEmail: String) {
         Button(
             onClick = { postJob() },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF1F8E9))
         ) {
             Text(text = "Post Job", color = Color.White)
         }

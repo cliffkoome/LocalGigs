@@ -28,202 +28,148 @@ fun HomePage(
     authViewModel: AuthViewModel,
     isProfessional: Boolean
 ) {
-    // Fetching the user's data
     val authState = authViewModel.authState.observeAsState()
     val db = FirebaseFirestore.getInstance()
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
-    val userEmail = user?.email // Get the user's email
-    var firstname by remember { mutableStateOf("") }
+    val userEmail = user?.email
 
-    // Fetch user's first name from Firestore
+    var firstname by remember { mutableStateOf("User") }
+    var recentJobs by remember { mutableStateOf(emptyList<Map<String, Any>>()) }
+    var upcomingJobs by remember { mutableStateOf(emptyList<Map<String, Any>>()) }
+    var totalEarnings by remember { mutableStateOf(0.0) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    // Fetch data from Firestore
     LaunchedEffect(userId) {
         if (userId != null) {
+            isLoading = true
             db.collection("users").document(userId).get()
                 .addOnSuccessListener { document ->
                     if (document.exists()) {
                         firstname = document.getString("firstname") ?: "User"
                     }
                 }
-                .addOnFailureListener { exception ->
-                    Toast.makeText(navController.context, "Error loading user data: ${exception.message}", Toast.LENGTH_SHORT).show()
+                .addOnFailureListener { Log.e("HomePage", "Error loading user data") }
+
+            db.collection("recentjobs")
+                .whereEqualTo("completedBy", userEmail)
+                .get()
+                .addOnSuccessListener { result ->
+                    recentJobs = result.map { it.data }
+                    totalEarnings = recentJobs.sumOf { (it["Pay"] as? Double) ?: 0.0 }
                 }
+                .addOnFailureListener { Log.e("HomePage", "Error fetching recent jobs") }
+
+            db.collection("upcomingjobs")
+                .whereEqualTo("AssignedTo", userId)
+                .get()
+                .addOnSuccessListener { result ->
+                    upcomingJobs = result.map { it.data }
+                }
+                .addOnFailureListener { Log.e("HomePage", "Error fetching upcoming jobs") }
+
+            isLoading = false
         }
     }
 
-    // Fetch recent jobs and upcoming jobs from Firestore
-    var recentjobs by remember { mutableStateOf<List<Map<String, String>>>(emptyList()) }
-    var upcomingjobs by remember { mutableStateOf<List<Map<String, String>>>(emptyList()) }
-    var totalEarnings by remember { mutableStateOf(0.0) }  // Variable for total earnings
-
-    LaunchedEffect(userId) {
-        if (userId != null) {
-            db.collection("recentjobs").get()
-                .addOnSuccessListener { result ->
-                    val jobs = result.map { document ->
-                        mapOf(
-                            "Title" to (document.getString("Title") ?: ""),
-                            "Status" to (document.getString("Status") ?: ""),
-                            "Pay" to (document.getDouble("Pay") ?: 0.0),
-                            "completedBy" to (document.getString("completedBy") ?: "")
-                        )
-                    }
-                    // Filter jobs where 'completedBy' matches the current user's email
-                    recentjobs = jobs.filter { job ->
-                        job["completedBy"] == userEmail
-                    } as List<Map<String, String>>
-                    // Calculate total earnings from the 'Pay' field of all recent jobs
-                    totalEarnings = recentjobs.sumOf { it["Pay"] as Double }
-                    Log.d("HomePage", "Fetched Recent Jobs: $recentjobs")
-                }
-                .addOnFailureListener { exception ->
-                    Toast.makeText(navController.context, "Error fetching recent jobs: ${exception.message}", Toast.LENGTH_SHORT).show()
-                }
-
-            db.collection("upcomingjobs").get()
-                .addOnSuccessListener { result ->
-                    val jobs = result.map { document ->
-                        mapOf(
-                            "Title" to (document.getString("Title") ?: ""),
-                            "Scheduled" to (document.getString("Scheduled") ?: ""),
-                            "AssignedTo" to (document.getString("AssignedTo") ?: "")
-                        )
-                    }
-                    // Filter jobs where 'AssignedTo' matches current user's email
-                    upcomingjobs = jobs.filter { job -> job["AssignedTo"] == userId }
-                    Log.d("HomePage", "Fetched Upcoming Jobs: $upcomingjobs")
-                }
-                .addOnFailureListener { exception ->
-                    Toast.makeText(navController.context, "Error fetching upcoming jobs: ${exception.message}", Toast.LENGTH_SHORT).show()
-                }
-        }
-    }
-
-    // UI Layout
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalArrangement = Arrangement.Top
     ) {
-        // Quick Actions at the Top
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextButton(onClick = { authViewModel.signout() }) {
-                Text("Sign Out", color = Color.Red)
-            }
-        }
-
-        // Welcome Header
-        Text(
-            text = "Welcome, $firstname!",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "Your Professional Dashboard",
-            fontSize = 18.sp,
-            color = Color.Gray
-        )
-
+//        TopBar(navController, authViewModel)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Earnings Overview (Total Earnings)
-        Text(
-            text = "Total Earnings: KES ${"%.2f".format(totalEarnings)}", // Display the total earnings
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold
-        )
+        // Header
+        Text("Welcome, $firstname!", style = MaterialTheme.typography.headlineMedium)
+        Text("Your Professional Dashboard", style = MaterialTheme.typography.bodyMedium)
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Earnings Overview
+        EarningsOverview(totalEarnings)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Job Sections
+        JobSection("Recent Jobs", recentJobs, Color(0xFFE3F2FD))
         Spacer(modifier = Modifier.height(16.dp))
+        JobSection("Upcoming Jobs", upcomingJobs, Color(0xFFFBE9E7))
 
-        // Recent Jobs Section
-        Text(text = "Recent Jobs", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Display Recent Jobs
-        if (recentjobs.isNotEmpty()) {
-            LazyColumn(modifier = Modifier.fillMaxWidth().height(150.dp)) {
-                items(recentjobs) { job ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(8.dp)
-                        ) {
-                            Text(
-                                text = job["Title"] ?: "",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Status: ${job["Status"] ?: ""}",
-                                fontSize = 14.sp,
-                                color = Color.Gray
-                            )
-                        }
-                    }
-                }
-            }
-        } else {
-            Text("No recent jobs found")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Upcoming Jobs Section
-        Text(text = "Upcoming Jobs", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Display Upcoming Jobs
-        if (upcomingjobs.isNotEmpty()) {
-            LazyColumn(modifier = Modifier.fillMaxWidth().height(150.dp)) {
-                items(upcomingjobs) { job ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFBE9E7))
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(8.dp)
-                        ) {
-                            Text(
-                                text = job["Title"] ?: "",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Scheduled At: ${job["Scheduled"] ?: ""}",
-                                fontSize = 14.sp,
-                                color = Color.Gray
-                            )
-                        }
-                    }
-                }
-            }
-        } else {
-            Text("No upcoming jobs found")
+        if (isLoading) {
+            CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
         }
     }
 
-    // Handle unauthenticated state
     LaunchedEffect(authState.value) {
         if (authState.value is AuthState.Unauthenticated) {
             navController.navigate("login")
+        }
+    }
+}
+
+@Composable
+fun TopBar(navController: NavController, authViewModel: AuthViewModel) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        TextButton(onClick = { authViewModel.signout() }) {
+            Text("Sign Out", color = Color.Red)
+        }
+    }
+}
+
+@Composable
+fun EarningsOverview(totalEarnings: Double) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFEDE7F6))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Total Earnings", style = MaterialTheme.typography.bodyLarge)
+            Text(
+                "KES ${"%.2f".format(totalEarnings)}",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+            )
+        }
+    }
+}
+
+@Composable
+fun JobSection(title: String, jobs: List<Map<String, Any>>, cardColor: Color) {
+    Text(title, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
+    Spacer(modifier = Modifier.height(8.dp))
+
+    if (jobs.isNotEmpty()) {
+        LazyColumn {
+            items(jobs) { job ->
+                JobCard(job, cardColor)
+            }
+        }
+    } else {
+        Text("No $title found", style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+fun JobCard(job: Map<String, Any>, cardColor: Color) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(4.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = cardColor)
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            Text(job["Title"] as? String ?: "Unknown", fontWeight = FontWeight.Bold)
+            Text("Status: ${job["Status"] ?: "Unknown"}", color = Color.Gray)
         }
     }
 }

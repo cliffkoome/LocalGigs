@@ -53,7 +53,6 @@ fun MainScreen(
     val navItemList = listOf(
         NavItem("Home", Icons.Default.Home),
         NavItem("Search", Icons.Default.Search),
-        NavItem("Messages", Icons.Default.MailOutline),
         NavItem("Profile", Icons.Default.Person)
     )
 
@@ -112,12 +111,12 @@ fun ContentScreen(
                 isProfessional = isProfessional
             )
             1 -> SearchPage(navController = navController)
-            2 -> MessagesPage(
+            3 -> MessagesPage(
                 navController = navController,
                 userId = userId,
                 messageRepository = MessageRepository()
             )
-            3 -> ProfilePage(modifier, authViewModel, navController)
+            2 -> ProfilePage(modifier, authViewModel, navController)
         }
     } else {
         when (selectedIndex) {
@@ -126,12 +125,12 @@ fun ContentScreen(
                 authViewModel = authViewModel
             )
             1 -> ClientSearchPage(navController = navController)
-            2 -> MessagesPage(
-                navController = navController,
-                userId = userId,
-                messageRepository = MessageRepository()
-            )
-            3 -> ProfilePage(modifier, authViewModel, navController)
+//            2 -> MessagesPage(
+//                navController = navController,
+//                userId = userId,
+//                messageRepository = MessageRepository()
+//            )
+            2 -> ProfilePage(modifier, authViewModel, navController)
         }
     }
 }

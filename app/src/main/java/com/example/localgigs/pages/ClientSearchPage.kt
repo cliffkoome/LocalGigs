@@ -92,7 +92,7 @@ fun UserCard(user: User, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(4.dp)
+            .padding(6.dp,4.dp)
             .clickable {
                 // Navigate to the professional details page and pass the user's email
                 navController.navigate("professional_details_page/${user.email}")

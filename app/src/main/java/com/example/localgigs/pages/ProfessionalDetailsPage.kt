@@ -48,20 +48,50 @@ fun ProfessionalDetailsPage(userEmail: String) {
         }
     }
 
-    if (isLoading.value) {
-       // CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-    } else {
-        // Show error message if any
-        errorMessage.value?.let {
-          //  Text(text = it, color = Color.Red, modifier = Modifier.align(Alignment.CenterHorizontally))
-        }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // Header Section
+        Text(
+            text = "Professional Details",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF333333),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
-        // Show user details if available
-        user.value?.let { user ->
-            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                Text(text = "Job Title: ${user.jobTitle}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text(text = "Name: ${user.firstname} ${user.lastname}", fontSize = 16.sp)
-                Text(text = "Email: ${user.email}", fontSize = 16.sp, color = Color.Gray)
+        // Loading Indicator
+        if (isLoading.value) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+        } else {
+            // Error Message if Any
+            errorMessage.value?.let {
+                Text(text = it, color = Color.Red, modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 16.dp))
+            }
+
+            // User Data Section
+            user.value?.let { user ->
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        text = "Job Title: ${user.jobTitle}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text(
+                        text = "Name: ${user.firstname} ${user.lastname}",
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text(
+                        text = "Email: ${user.email}",
+                        fontSize = 16.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
             }
         }
     }

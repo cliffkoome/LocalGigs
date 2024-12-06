@@ -38,7 +38,7 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
     val userTypeState by authViewModel.userType.observeAsState(initial = null)
 
     val startDestination = if (isAuthenticated) {
-        if (userTypeState == "Client") "client home" else "home"
+        "home"
     } else {
         "login"
     }
@@ -57,11 +57,11 @@ fun MyAppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel)
         composable("search") { 
             SearchPage(navController = navController)
         }
-        composable("client home") {
-            ClientHomePage(
-                navController = navController,
-                authViewModel = authViewModel)
-        }
+//        composable("client home") {
+//            ClientHomePage(
+//                navController = navController,
+//                authViewModel = authViewModel)
+//        }
         composable("home") {
             MainScreen(
                 authViewModel = authViewModel,

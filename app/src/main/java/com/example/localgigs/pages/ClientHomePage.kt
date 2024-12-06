@@ -2,10 +2,14 @@ package com.example.localgigs.pages
 
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -66,54 +70,35 @@ fun ClientHomePage(
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Quick Actions at the Top
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextButton(onClick = { authViewModel.signout() }) {
-                Text("Sign Out", color = Color.Red)
-            }
-            // Button to Post a Job
-            Button(
-                onClick = {
-                    navController.navigate("PostJob")
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Post a Job", color = Color.White)
-            }
-        }
-
         // Welcome Header
         Text(
             text = "Welcome, $firstname!",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF333333),
+            modifier = Modifier.padding(bottom = 8.dp)
         )
+        Spacer(Modifier.height(10.dp))
         Text(
             text = "Your Client Dashboard",
-            fontSize = 18.sp,
-            color = Color.Gray
+            fontSize = 16.sp,
+            color = Color.Black,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         // Posted Jobs Section
         Text(
             text = "Your Posted Jobs",
-            fontSize = 18.sp,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 8.dp),
+            color = Color(0xFF007BFF)
         )
         LazyColumn(
             modifier = Modifier.fillMaxWidth()
@@ -127,24 +112,36 @@ fun ClientHomePage(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Ongoing Jobs (Posted by User)
         Text(
             text = "Ongoing Jobs (Posted by You)",
-            fontSize = 18.sp,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 8.dp),
+            color = Color(0xFF007BFF)
         )
         LazyColumn(
             modifier = Modifier.fillMaxWidth()
         ) {
             items(ongoingJobsAssigned) { job ->
-                JobCard(job, navController, Color(0xFFFFCC80)) // Orange
+                JobCard(job, navController, Color(0xFFFFE0B2)) // Light Orange
             }
         }
-    }
 
+    }
+    FloatingActionButton(
+        onClick = {
+            navController.navigate("PostJob")
+        },
+        modifier = Modifier
+            .padding(bottom = 150.dp, end = 16.dp)
+            .align(Alignment.BottomEnd)
+
+    ) {
+        Icon(Icons.Default.Add, contentDescription = "Compose Message")
+    }}
     LaunchedEffect(authState.value) {
         if (authState.value is AuthState.Unauthenticated) {
             navController.navigate("login")
@@ -157,7 +154,7 @@ fun JobCard(job: Job, navController: NavController, cardColor: Color) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp)
+            .padding(bottom = 16.dp)
             .clickable {
                 if (job.status == "assigned") {
                     navController.navigate(
@@ -177,62 +174,28 @@ fun JobCard(job: Job, navController: NavController, cardColor: Color) {
                     navController.navigate("ApplicantsPage/${job.jobId}")
                 }
             },
-        colors = CardDefaults.cardColors(containerColor = cardColor)
+        colors = CardDefaults.cardColors(containerColor = cardColor),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = job.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Text(text = "Category: ${job.category}")
-            Text(text = "Location: ${job.location}")
-            Text(text = "Pay: KES ${job.pay}")
-            Text(text = "Job Type: ${job.jobType}")
-            Text(text = "Skills: ${job.skills}")
-            Text(text = "Description: ${job.description}")
-            Text(text = "Status: ${job.status}")
-        }
-    }
-}
-
-// Updated Ongoing Job Card to be clickable
-@Composable
-fun OngoingJobCard(job: Job, navController: NavController) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .clickable {
-                navController.navigate(
-                    "ManageJobsPage/${
-                        Uri.encode(job.jobId)
-                    }/${
-                        Uri.encode(job.title)
-                    }/${
-                        Uri.encode(job.description)
-                    }/${
-                        job.pay
-                    }/${
-                        Uri.encode(job.location)
-                    }"
-                )
-            }
-        ,
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
             Text(
                 text = job.title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Color(0xFF333333)
             )
-            Text(
-                text = job.description,
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = "Category: ${job.category}", fontSize = 14.sp, color = Color.Gray)
+            Text(text = "Location: ${job.location}", fontSize = 14.sp, color = Color.Gray)
+            Text(text = "Pay: KES ${job.pay}", fontSize = 14.sp, color = Color(0xFF007BFF))
+            Text(text = "Job Type: ${job.jobType}", fontSize = 14.sp, color = Color.Gray)
+            Text(text = "Skills: ${job.skills}", fontSize = 14.sp, color = Color.Gray)
+            Text(text = "Status: ${job.status}", fontSize = 14.sp, color = Color(0xFF007BFF))
         }
     }
 }
 
+// Helper function to fetch jobs from Firestore
 fun fetchJobs(
     db: FirebaseFirestore,
     userEmail: String,
